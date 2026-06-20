@@ -8,7 +8,7 @@ export const SHOE_SIZE = DECK_COUNT * 52
 export const HANDS_PER_SHOE = 5
 
 /** Minimum wager in tadpoles. */
-export const MIN_BET = 1
+export const MIN_BET = 10
 
 /** Dealer stands on all 17s, including soft 17. */
 export const DEALER_HITS_SOFT_17 = false

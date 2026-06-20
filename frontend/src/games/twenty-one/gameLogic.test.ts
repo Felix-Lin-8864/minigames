@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getOptimalMove } from './basicStrategy'
 import { createCard } from './cards'
-import { CARD_VALUE_KEYS, HANDS_PER_SHOE, SHOE_SIZE } from './constants'
+import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, SHOE_SIZE } from './constants'
 import { createInitialState, twentyOneReducer, toSnapshot } from './gameLogic'
 import { fisherYatesShuffle } from './shuffle'
 import * as shoeModule from './shoe'
@@ -168,8 +168,8 @@ function doubleDown(state: ReturnType<typeof createInitialState>) {
 describe('game reducer', () => {
   it('allows betting phase transitions without dealing', () => {
     const state = createInitialState(createShoe(deterministicRandom([0.5])))
-    const next = twentyOneReducer(state, { type: 'set_bet', bet: 5 })
-    expect(next.pendingBet).toBe(5)
+    const next = twentyOneReducer(state, { type: 'set_bet', bet: 15 })
+    expect(next.pendingBet).toBe(15)
     expect(next.phase).toBe('betting')
   })
 
@@ -204,7 +204,7 @@ describe('game reducer', () => {
     for (let seed = 0; seed < 100; seed += 1) {
       const random = deterministicRandom([seed / 100, 0.5, 0.25])
       let state = createInitialState(createShoe(random))
-      state = twentyOneReducer(state, { type: 'set_bet', bet: 3 })
+      state = twentyOneReducer(state, { type: 'set_bet', bet: MIN_BET })
       state = dealHand(state)
       if (state.phase !== 'playing') continue
       if (state.playerHands[0]!.cards.length !== 2) continue
@@ -225,7 +225,7 @@ describe('game reducer', () => {
     for (let seed = 0; seed < 200; seed += 1) {
       const random = deterministicRandom([seed / 100, 0.5, 0.25, 0.75])
       let state = createInitialState(createShoe(random))
-      state = twentyOneReducer(state, { type: 'set_bet', bet: 4 })
+      state = twentyOneReducer(state, { type: 'set_bet', bet: MIN_BET })
       state = dealHand(state)
       if (state.phase !== 'playing' || state.playerHands[0]!.cards.length !== 2) continue
 
