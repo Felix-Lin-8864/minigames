@@ -3,7 +3,6 @@ import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import FavoriteIcon from '@mui/icons-material/Favorite'
 import { useEffect, useRef } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { FroggerCanvas } from './FroggerCanvas'
@@ -51,37 +50,25 @@ export function FroggerGame() {
 
   return (
     <Stack spacing={3} sx={{ alignItems: 'center' }}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        sx={{ width: '100%', maxWidth: 520, justifyContent: 'space-between' }}
-      >
-        <Stack direction="row" spacing={3}>
+      <Stack direction="row" spacing={3}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            Best distance
+          </Typography>
+          <Typography variant="h5" sx={{ fontFamily: '"Fredoka", sans-serif' }}>
+            {snapshot.score} {snapshot.score === 1 ? 'tile' : 'tiles'}
+          </Typography>
+        </Box>
+        {snapshot.status === 'playing' && (
           <Box>
             <Typography variant="caption" color="text.secondary">
-              Best distance
+              Current
             </Typography>
             <Typography variant="h5" sx={{ fontFamily: '"Fredoka", sans-serif' }}>
-              {snapshot.score} {snapshot.score === 1 ? 'tile' : 'tiles'}
+              {currentDistance} {currentDistance === 1 ? 'tile' : 'tiles'}
             </Typography>
           </Box>
-          {snapshot.status === 'playing' && (
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Current
-              </Typography>
-              <Typography variant="h5" sx={{ fontFamily: '"Fredoka", sans-serif' }}>
-                {currentDistance} {currentDistance === 1 ? 'tile' : 'tiles'}
-              </Typography>
-            </Box>
-          )}
-        </Stack>
-
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-          {Array.from({ length: snapshot.lives }).map((_, i) => (
-            <FavoriteIcon key={i} sx={{ color: 'primary.main', fontSize: 22 }} />
-          ))}
-        </Stack>
+        )}
       </Stack>
 
       <Paper

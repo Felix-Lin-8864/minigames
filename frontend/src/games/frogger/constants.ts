@@ -1,10 +1,17 @@
-export const COLS = 13
+export const HIDDEN_COLS = 3
+export const VISIBLE_COLS = 13
+/** Total logical columns including hidden buffers on each side. */
+export const COLS = VISIBLE_COLS + HIDDEN_COLS * 2
+
+export const VISIBLE_COL_MIN = HIDDEN_COLS
+export const VISIBLE_COL_MAX = HIDDEN_COLS + VISIBLE_COLS - 1
+
 export const VIEWPORT_ROWS = 13
 export const CELL_SIZE = 40
 export const TILE_GAP = 3
 export const TILE_RADIUS = 5
 
-export const CANVAS_WIDTH = COLS * CELL_SIZE
+export const CANVAS_WIDTH = VISIBLE_COLS * CELL_SIZE
 export const CANVAS_HEIGHT = VIEWPORT_ROWS * CELL_SIZE
 
 /** Bottom row index (0 = bottom of screen). */
@@ -15,8 +22,6 @@ export const TOP_ROW = VIEWPORT_ROWS - 1
 
 /** Frog spawn row (0-indexed from bottom). */
 export const FROG_START_ROW = 3
-
-export const INITIAL_LIVES = 3
 
 export const MOVEMENT_SCALE = 0.006
 export const MOVE_COOLDOWN_MS = 280
@@ -101,4 +106,17 @@ export function difficultyForWorldRow(worldRow: number): number {
 /** Canvas y-offset: row 0 is the bottom of the screen. */
 export function rowToCanvasY(row: number): number {
   return (VIEWPORT_ROWS - 1 - row) * CELL_SIZE + TILE_GAP / 2
+}
+
+/** Map a logical column to canvas x (only visible columns are drawn). */
+export function logicalColToCanvasX(col: number): number {
+  return (col - HIDDEN_COLS) * CELL_SIZE + TILE_GAP / 2
+}
+
+export function isLogicalColVisible(col: number): boolean {
+  return col >= VISIBLE_COL_MIN && col <= VISIBLE_COL_MAX
+}
+
+export function logicalXToCanvasCenterX(x: number): number {
+  return (x - HIDDEN_COLS) * CELL_SIZE + CELL_SIZE / 2
 }

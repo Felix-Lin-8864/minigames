@@ -5,7 +5,8 @@ export interface Frog {
   row: number
   x: number
   onLogId: number | null
-  logSlot: number
+  /** Horizontal offset from the riding log's x while drifting. */
+  logOffset: number
 }
 
 export interface Car {
@@ -35,7 +36,6 @@ export interface FroggerState {
   /** World row index for each screen row (bottom-indexed). */
   rowWorldRows: number[]
   score: number
-  lives: number
   nextWorldRow: number
   nextEntityId: number
 }
@@ -53,5 +53,4 @@ export interface FroggerSnapshot {
   logs: Log[]
   rowWorldRows: number[]
   score: number
-  lives: number
 }

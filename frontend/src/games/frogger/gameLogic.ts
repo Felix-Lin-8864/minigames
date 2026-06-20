@@ -2,10 +2,13 @@ import {
   BOTTOM_ROW,
   COLS,
   FROG_START_ROW,
-  INITIAL_LIVES,
+  HIDDEN_COLS,
   MOVEMENT_SCALE,
   TOP_ROW,
   VIEWPORT_ROWS,
+  VISIBLE_COL_MAX,
+  VISIBLE_COL_MIN,
+  VISIBLE_COLS,
   isRiverWorldRow,
 } from './constants'
 import {
@@ -16,13 +19,13 @@ import {
 import type { Car, Frog, FroggerAction, FroggerSnapshot, FroggerState, Log } from './types'
 
 function createFrog(row = FROG_START_ROW): Frog {
-  const startCol = Math.floor(COLS / 2)
+  const startCol = HIDDEN_COLS + Math.floor(VISIBLE_COLS / 2)
   return {
     col: startCol,
     row,
     x: startCol,
     onLogId: null,
-    logSlot: 0,
+    logOffset: 0,
   }
 }
 
@@ -37,7 +40,6 @@ export function createInitialState(): FroggerState {
     logs: entities.logs,
     rowWorldRows,
     score: 0,
-    lives: INITIAL_LIVES,
     nextWorldRow: VIEWPORT_ROWS - FROG_START_ROW,
     nextEntityId: entities.nextId,
   }
@@ -71,6 +73,10 @@ function frogCenterX(frog: Frog): number {
   return frog.x + 0.5
 }
 
+function isFrogOffScreen(center: number): boolean {
+  return center < VISIBLE_COL_MIN || center >= VISIBLE_COL_MIN + VISIBLE_COLS
+}
+
 function isPointOnSegment(point: number, start: number, width: number): boolean {
   if (point >= start && point < start + width) return true
   const end = start + width
@@ -83,36 +89,23 @@ function isFrogOnLog(frog: Frog, log: Log): boolean {
   return isPointOnSegment(frogCenterX(frog), log.x, log.width)
 }
 
-function findSlotForCol(log: Log, col: number): number {
-  for (let slot = 0; slot < log.width; slot++) {
-    if (isPointOnSegment(col + 0.5, log.x + slot, 1)) return slot
-  }
-
-  let closest = 0
-  let minDist = Infinity
-  for (let slot = 0; slot < log.width; slot++) {
-    const slotCol = wrapCol(Math.floor(log.x + slot))
-    const dist = Math.min(
-      Math.abs(slotCol - col),
-      COLS - Math.abs(slotCol - col),
-    )
-    if (dist < minDist) {
-      minDist = dist
-      closest = slot
-    }
-  }
-  return closest
+function rideFrogOnLog(frog: Frog, log: Log, logOffset?: number): Frog {
+  const offset =
+    logOffset ??
+    (frog.onLogId === log.id ? frog.logOffset : frog.x - log.x)
+  const x = log.x + offset
+  const col = wrapCol(Math.round(x))
+  return { ...frog, onLogId: log.id, logOffset: offset, x, col }
 }
 
-function rideFrogOnLog(frog: Frog, log: Log, logSlot?: number): Frog {
-  const slot = logSlot ?? frog.logSlot
-  const x = log.x + slot
+function driftFrogOnLog(frog: Frog, log: Log): Frog {
+  const x = log.x + frog.logOffset
   const col = wrapCol(Math.round(x))
-  return { ...frog, onLogId: log.id, logSlot: slot, x, col }
+  return { ...frog, onLogId: log.id, x, col }
 }
 
 function clearLogRide(frog: Frog): Frog {
-  return { ...frog, onLogId: null, logSlot: 0, x: frog.col }
+  return { ...frog, onLogId: null, logOffset: 0, x: frog.col }
 }
 
 function isOnLog(frog: Frog, logs: Log[]): Log | null {
@@ -173,23 +166,8 @@ function scrollRowsDown(state: FroggerState): FroggerState {
   }
 }
 
-function resetFrogAfterDeath(state: FroggerState): FroggerState {
-  return {
-    ...state,
-    frog: createFrog(FROG_START_ROW),
-  }
-}
-
-function loseLife(state: FroggerState): FroggerState {
-  const lives = state.lives - 1
-  if (lives <= 0) {
-    return {
-      ...createInitialState(),
-      lives: 0,
-      status: 'gameover',
-    }
-  }
-  return resetFrogAfterDeath({ ...state, lives })
+function gameOver(state: FroggerState): FroggerState {
+  return { ...state, status: 'gameover' }
 }
 
 function validateFrogPlacement(state: FroggerState, frog: Frog): FroggerState | 'dead' {
@@ -198,7 +176,7 @@ function validateFrogPlacement(state: FroggerState, frog: Frog): FroggerState | 
   if (isRiverScreenRow(state, frog.row)) {
     const log = isOnLog(frog, state.logs)
     if (!log) return 'dead'
-    return { ...state, frog: rideFrogOnLog(frog, log, findSlotForCol(log, frog.col)) }
+    return { ...state, frog: rideFrogOnLog(frog, log) }
   }
 
   return { ...state, frog: clearLogRide(frog) }
@@ -214,7 +192,7 @@ function applyMove(state: FroggerState, dCol: number, screenDr: number): Frogger
   if (screenDr < 0) {
     // Up: scroll the map down (toward bottom index) and spawn row 12
     next = scrollRowsDown(next)
-    frog = { ...frog, onLogId: null, logSlot: 0 }
+    frog = { ...frog, onLogId: null, logOffset: 0 }
   } else if (screenDr > 0) {
     // Down: move frog one row toward the bottom
     if (frog.row <= BOTTOM_ROW) return state
@@ -228,19 +206,19 @@ function applyMove(state: FroggerState, dCol: number, screenDr: number): Frogger
       screenDr === 0
     ) {
       const log = next.logs.find((entry) => entry.id === frog.onLogId)
-      if (!log) return loseLife(state)
+      if (!log) return gameOver(state)
 
-      const logSlot = Math.max(0, Math.min(log.width - 1, frog.logSlot + dCol))
-      frog = rideFrogOnLog(frog, log, logSlot)
+      const logOffset = Math.max(0, Math.min(log.width - 1, frog.logOffset + dCol))
+      frog = rideFrogOnLog(frog, log, logOffset)
     } else {
-      const col = Math.max(0, Math.min(COLS - 1, frog.col + dCol))
+      const col = Math.max(VISIBLE_COL_MIN, Math.min(VISIBLE_COL_MAX, frog.col + dCol))
       frog = clearLogRide({ ...frog, col, x: col })
     }
   }
 
   next = { ...next, frog }
   const validated = validateFrogPlacement(next, frog)
-  if (validated === 'dead') return loseLife(state)
+  if (validated === 'dead') return gameOver(state)
 
   next = withBestScore(validated)
   return next
@@ -274,18 +252,18 @@ export function froggerReducer(
           (frog.onLogId != null ? logs.find((entry) => entry.id === frog.onLogId) : null) ??
           isOnLog(frog, logs)
 
-        if (!log) return loseLife(state)
+        if (!log) return gameOver(state)
 
-        frog = rideFrogOnLog(frog, log, frog.logSlot)
+        frog = driftFrogOnLog(frog, log)
 
         const center = frogCenterX(frog)
-        if (center < 0 || center >= COLS) return loseLife(state)
-        if (!isFrogOnLog(frog, log)) return loseLife(state)
+        if (isFrogOffScreen(center)) return gameOver(state)
+        if (!isFrogOnLog(frog, log)) return gameOver(state)
       } else if (frog.onLogId != null) {
         frog = clearLogRide(frog)
       }
 
-      if (hitsCar(frog, cars)) return loseLife(state)
+      if (hitsCar(frog, cars)) return gameOver(state)
 
       return { ...next, frog }
     }
@@ -303,6 +281,5 @@ export function toSnapshot(state: FroggerState) {
     logs: state.logs,
     rowWorldRows: state.rowWorldRows,
     score: state.score,
-    lives: state.lives,
   }
 }

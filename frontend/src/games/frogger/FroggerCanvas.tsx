@@ -1,12 +1,19 @@
 import { useEffect, useRef } from 'react'
 import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
   CELL_SIZE,
   COLORS,
   COLS,
   TILE_GAP,
   TILE_RADIUS,
   VIEWPORT_ROWS,
+  VISIBLE_COL_MAX,
+  VISIBLE_COL_MIN,
+  isLogicalColVisible,
   laneTypeForWorldRow,
+  logicalColToCanvasX,
+  logicalXToCanvasCenterX,
   rowToCanvasY,
   type LaneType,
 } from './constants'
@@ -19,16 +26,12 @@ interface TileBounds {
   inner: number
 }
 
-function getTileBounds(col: number, row: number): TileBounds {
+function getTileBounds(logicalCol: number, row: number): TileBounds {
   const pad = TILE_GAP / 2
-  const x = col * CELL_SIZE + pad
+  const x = logicalColToCanvasX(logicalCol)
   const y = rowToCanvasY(row) - TILE_GAP / 2 + pad
   const size = CELL_SIZE - TILE_GAP
   return { x, y, size, inner: size - 4 }
-}
-
-function colToX(col: number): number {
-  return col * CELL_SIZE + TILE_GAP / 2
 }
 
 function wrapCol(col: number): number {
@@ -116,14 +119,14 @@ function drawRiverDetail(
 
 function drawTile(
   ctx: CanvasRenderingContext2D,
-  col: number,
+  logicalCol: number,
   row: number,
   worldRow: number,
 ) {
-  const { x, y, size } = getTileBounds(col, row)
+  const { x, y, size } = getTileBounds(logicalCol, row)
   const kind = laneTypeForWorldRow(worldRow)
 
-  ctx.fillStyle = tileFill(kind, col, worldRow)
+  ctx.fillStyle = tileFill(kind, logicalCol, worldRow)
   drawRoundedRect(ctx, x, y, size, size, TILE_RADIUS)
   ctx.fill()
 
@@ -135,27 +138,92 @@ function drawTile(
     drawGrassDetail(ctx, x, y, size)
   }
   if (kind === 'road') drawRoadDetail(ctx, x, y, size)
-  if (kind === 'river') drawRiverDetail(ctx, x, y, size, col)
+  if (kind === 'river') drawRiverDetail(ctx, x, y, size, logicalCol)
 }
 
 function drawTiles(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
   ctx.fillStyle = COLORS.tileGap
-  ctx.fillRect(0, 0, COLS * CELL_SIZE, VIEWPORT_ROWS * CELL_SIZE)
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
   for (let row = 0; row < VIEWPORT_ROWS; row++) {
     const worldRow = snapshot.rowWorldRows[row] ?? 0
-    for (let col = 0; col < COLS; col++) {
+    for (let col = VISIBLE_COL_MIN; col <= VISIBLE_COL_MAX; col++) {
       drawTile(ctx, col, row, worldRow)
     }
   }
 }
 
+function drawLogBody(
+  ctx: CanvasRenderingContext2D,
+  logicalX: number,
+  widthInCols: number,
+  y: number,
+  h: number,
+) {
+  const x = logicalColToCanvasX(logicalX) + 1
+  const w = widthInCols * CELL_SIZE - TILE_GAP - 2
+
+  ctx.fillStyle = COLORS.log
+  ctx.fillRect(x, y, w, h)
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)'
+  ctx.lineWidth = 1
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
+
+  for (let slot = 1; slot < widthInCols; slot++) {
+    const lineX = logicalColToCanvasX(logicalX + slot)
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'
+    ctx.beginPath()
+    ctx.moveTo(lineX, y + 2)
+    ctx.lineTo(lineX, y + h - 2)
+    ctx.stroke()
+  }
+
+  ctx.fillStyle = COLORS.logLight
+  ctx.fillRect(x + 4, y + h / 2 - 1, w - 8, 2)
+}
+
+function drawLogs(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
+  snapshot.logs.forEach((log) => {
+    const y = rowToCanvasY(log.row) + 7
+    const h = CELL_SIZE - TILE_GAP - 14
+    const endX = log.x + log.width
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    ctx.clip()
+
+    if (endX <= COLS) {
+      const x = logicalColToCanvasX(log.x) + 1
+      const w = log.width * CELL_SIZE - TILE_GAP - 2
+      if (x + w >= 0 && x <= CANVAS_WIDTH) {
+        drawLogBody(ctx, log.x, log.width, y, h)
+      }
+    } else {
+      const firstWidth = COLS - log.x
+      const secondWidth = log.width - firstWidth
+      drawLogBody(ctx, log.x, firstWidth, y, h)
+      drawLogBody(ctx, 0, secondWidth, y, h)
+    }
+
+    ctx.restore()
+  })
+}
+
 function drawCars(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
   snapshot.cars.forEach((car) => {
-    const x = colToX(car.x) + 2
+    const x = logicalColToCanvasX(car.x) + 2
     const y = rowToCanvasY(car.row) + 5
     const w = car.width * CELL_SIZE - TILE_GAP - 4
     const h = CELL_SIZE - TILE_GAP - 10
+
+    if (x + w < 0 || x > CANVAS_WIDTH) return
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+    ctx.clip()
 
     ctx.fillStyle = car.variant === 'truck' ? COLORS.truck : COLORS.car
     drawRoundedRect(ctx, x, y, w, h, 4)
@@ -170,37 +238,18 @@ function drawCars(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
     const cabX = car.direction === 1 ? x + w - cabW - 2 : x + 2
     drawRoundedRect(ctx, cabX, y + 3, cabW, h - 6, 3)
     ctx.fill()
-  })
-}
 
-function drawLogs(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
-  snapshot.logs.forEach((log) => {
-    const y = rowToCanvasY(log.row) + 7
-    const h = CELL_SIZE - TILE_GAP - 14
-
-    for (let slot = 0; slot < log.width; slot++) {
-      const worldCol = log.x + slot
-      const x = worldCol * CELL_SIZE + TILE_GAP / 2
-      const w = CELL_SIZE - TILE_GAP
-
-      ctx.fillStyle = COLORS.log
-      ctx.fillRect(x, y, w, h)
-
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)'
-      ctx.lineWidth = 1
-      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
-
-      ctx.fillStyle = COLORS.logLight
-      ctx.fillRect(x + 3, y + h / 2 - 1, w - 6, 2)
-    }
+    ctx.restore()
   })
 }
 
 function drawFrog(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
   const { frog } = snapshot
-  const displayCol = wrapCol(Math.floor(frog.x))
-  const tile = getTileBounds(displayCol, frog.row)
-  const cx = frog.x * CELL_SIZE + CELL_SIZE / 2
+  const logicalCol = wrapCol(Math.round(frog.x))
+  if (!isLogicalColVisible(logicalCol)) return
+
+  const tile = getTileBounds(logicalCol, frog.row)
+  const cx = logicalXToCanvasCenterX(frog.x)
   const cy = rowToCanvasY(frog.row) + (CELL_SIZE - TILE_GAP) / 2
   const r = tile.inner * 0.28
 
@@ -246,10 +295,7 @@ function drawOverlay(
 }
 
 function render(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
-  const width = COLS * CELL_SIZE
-  const height = VIEWPORT_ROWS * CELL_SIZE
-
-  ctx.clearRect(0, 0, width, height)
+  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
   drawTiles(ctx, snapshot)
   drawLogs(ctx, snapshot)
   drawCars(ctx, snapshot)
@@ -259,14 +305,14 @@ function render(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
   }
 
   if (snapshot.status === 'idle') {
-    drawOverlay(ctx, width, height, 'Frogger', 'Press Start or Enter to hop in')
+    drawOverlay(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, 'Frogger', 'Press Start or Enter to hop in')
   }
 
   if (snapshot.status === 'gameover') {
     drawOverlay(
       ctx,
-      width,
-      height,
+      CANVAS_WIDTH,
+      CANVAS_HEIGHT,
       'Game Over',
       `${snapshot.score} tiles — press Restart to try again`,
     )
@@ -293,12 +339,12 @@ export function FroggerCanvas({ snapshot }: FroggerCanvasProps) {
   return (
     <canvas
       ref={canvasRef}
-      width={COLS * CELL_SIZE}
-      height={VIEWPORT_ROWS * CELL_SIZE}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
       style={{
         display: 'block',
         width: '100%',
-        maxWidth: COLS * CELL_SIZE,
+        maxWidth: CANVAS_WIDTH,
         height: 'auto',
         borderRadius: 12,
         border: '1px solid rgba(74, 222, 128, 0.2)',
