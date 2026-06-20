@@ -1,12 +1,14 @@
 import { useCallback, useReducer, useRef } from 'react'
 import { useWallet } from '../../wallet/useWallet'
 import type { Bet } from './bets'
+import { MIN_BET } from './constants'
 import {
   createInitialState,
   rouletteReducer,
   toSnapshot,
-  totalStaked,
+  totalWager,
 } from './gameLogic'
+import { pickBoostedPocket } from './multiplier'
 import { spinPocket } from './spin'
 
 export function useRouletteGame() {
@@ -18,6 +20,10 @@ export function useRouletteGame() {
 
   const setChip = useCallback((amount: number) => {
     dispatch({ type: 'set_chip', amount })
+  }, [])
+
+  const setBoostAmount = useCallback((amount: number) => {
+    dispatch({ type: 'set_boost_amount', amount })
   }, [])
 
   const placeBet = useCallback((bet: Bet) => {
@@ -37,12 +43,15 @@ export function useRouletteGame() {
     if (current.phase !== 'betting') return false
     if (current.pendingBets.length === 0) return false
 
-    const stake = totalStaked(current)
-    const spent = await spendTadpoles(stake)
+    const wager = totalWager(current)
+    const spent = await spendTadpoles(wager)
     if (!spent) return false
 
     const result = spinPocket()
-    dispatch({ type: 'spin', spinResult: result })
+    const boostedPocket =
+      current.boostAmount >= MIN_BET ? pickBoostedPocket() : undefined
+
+    dispatch({ type: 'spin', spinResult: result, boostedPocket })
     return true
   }, [spendTadpoles])
 
@@ -65,6 +74,7 @@ export function useRouletteGame() {
     snapshot,
     wallet,
     setChip,
+    setBoostAmount,
     placeBet,
     clearBets,
     rebet,

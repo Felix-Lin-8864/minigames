@@ -14,6 +14,9 @@ export function createInitialState(): RouletteState {
     recentSpins: [],
     message: null,
     resolutionId: 0,
+    boostAmount: 0,
+    boostedPocket: null,
+    multiplierHit: false,
   }
 }
 
@@ -21,11 +24,21 @@ export function totalStaked(state: RouletteState): number {
   return state.pendingBets.reduce((sum, b) => sum + b.amount, 0)
 }
 
+export function boostCost(state: RouletteState): number {
+  return state.boostAmount >= MIN_BET ? state.boostAmount : 0
+}
+
+export function totalWager(state: RouletteState): number {
+  return totalStaked(state) + boostCost(state)
+}
+
 function cloneBets(bets: Bet[]): Bet[] {
   return bets.map((b) => ({ ...b, numbers: [...b.numbers] }))
 }
 
 export function toSnapshot(state: RouletteState): RouletteSnapshot {
+  const staked = totalStaked(state)
+  const bCost = boostCost(state)
   return {
     phase: state.phase,
     pendingBets: [...state.pendingBets],
@@ -36,13 +49,28 @@ export function toSnapshot(state: RouletteState): RouletteSnapshot {
     recentSpins: [...state.recentSpins],
     message: state.message,
     resolutionId: state.resolutionId,
-    totalStaked: totalStaked(state),
+    totalStaked: staked,
+    boostAmount: state.boostAmount,
+    boostedPocket: state.boostedPocket,
+    boostCost: bCost,
+    totalWager: staked + bCost,
+    multiplierHit: state.multiplierHit,
     canRebet: state.lastRoundBets.length > 0,
   }
 }
 
-function formatSpinMessage(net: number): string {
-  if (net > 0) return `You won ${net} tadpoles!`
+function formatSpinMessage(
+  net: number,
+  multiplierHit: boolean,
+  boost: number,
+  boostedPocket: number | null,
+): string {
+  if (net > 0) {
+    if (multiplierHit && boostedPocket != null) {
+      return `You won ${net} tadpoles (${boost}× on ${boostedPocket})!`
+    }
+    return `You won ${net} tadpoles!`
+  }
   if (net < 0) return `You lost ${Math.abs(net)} tadpoles.`
   return 'Break even.'
 }
@@ -57,6 +85,14 @@ export function rouletteReducer(
       const amount = Math.floor(action.amount)
       if (!Number.isFinite(amount) || amount < MIN_BET) return state
       return { ...state, selectedChip: amount }
+    }
+
+    case 'set_boost_amount': {
+      if (state.phase !== 'betting') return state
+      const amount = Math.floor(action.amount)
+      if (!Number.isFinite(amount) || amount < 0) return state
+      if (amount > 0 && amount < MIN_BET) return state
+      return { ...state, boostAmount: amount }
     }
 
     case 'place_bet': {
@@ -94,15 +130,29 @@ export function rouletteReducer(
       if (state.phase !== 'betting') return state
       if (state.pendingBets.length === 0) return state
 
-      const resolution = resolveSpin(state.pendingBets, action.spinResult)
+      const hasBoost = state.boostAmount >= MIN_BET
+      const boostedPocket = hasBoost ? (action.boostedPocket ?? null) : null
+      const boost =
+        boostedPocket != null
+          ? { pocket: boostedPocket, multiplier: state.boostAmount }
+          : null
+
+      const resolution = resolveSpin(state.pendingBets, action.spinResult, boost)
       return {
         ...state,
         phase: 'revealing',
         lastRoundBets: cloneBets(state.pendingBets),
         spinResult: action.spinResult,
+        boostedPocket,
         betOutcomes: resolution.outcomes,
         lastSpinNet: resolution.net,
-        message: formatSpinMessage(resolution.net),
+        multiplierHit: resolution.multiplierHit,
+        message: formatSpinMessage(
+          resolution.net,
+          resolution.multiplierHit,
+          state.boostAmount,
+          boostedPocket,
+        ),
       }
     }
 
@@ -121,6 +171,8 @@ export function rouletteReducer(
         message: null,
         recentSpins,
         resolutionId: state.resolutionId + 1,
+        boostedPocket: null,
+        multiplierHit: false,
       }
     }
 

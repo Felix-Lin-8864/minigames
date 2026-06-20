@@ -127,4 +127,37 @@ describe('resolveSpin', () => {
     expect(resolution.totalPayout).toBe(5 * 36)
     expect(resolution.net).toBe(5 * 36 - 15)
   })
+
+  it('multiplies winnings on boosted pocket for covering bets', () => {
+    const bets: Bet[] = [
+      createInsideBet('straight', [7], 5)!,
+      createOutsideBet('red', 10),
+    ]
+    const resolution = resolveSpin(bets, 7, { pocket: 7, multiplier: 3 })
+    expect(resolution.outcomes[0]!.payout).toBe(5 * 36 * 3)
+    expect(resolution.outcomes[0]!.multiplierApplied).toBe(true)
+    expect(resolution.outcomes[1]!.payout).toBe(20 * 3)
+    expect(resolution.outcomes[1]!.multiplierApplied).toBe(true)
+    expect(resolution.multiplierHit).toBe(true)
+    expect(resolution.net).toBe(5 * 36 * 3 + 20 * 3 - 15 - 3)
+  })
+
+  it('does not multiply when boosted pocket does not win', () => {
+    const bets: Bet[] = [createInsideBet('straight', [7], 5)!]
+    const resolution = resolveSpin(bets, 8, { pocket: 7, multiplier: 5 })
+    expect(resolution.outcomes[0]!.payout).toBe(0)
+    expect(resolution.multiplierHit).toBe(false)
+    expect(resolution.net).toBe(-5 - 5)
+  })
+
+  it('does not multiply bets that do not cover boosted pocket', () => {
+    const bets: Bet[] = [
+      createInsideBet('straight', [7], 5)!,
+      createInsideBet('straight', [8], 5)!,
+    ]
+    const resolution = resolveSpin(bets, 8, { pocket: 8, multiplier: 2 })
+    expect(resolution.outcomes[0]!.payout).toBe(0)
+    expect(resolution.outcomes[1]!.payout).toBe(5 * 36 * 2)
+    expect(resolution.outcomes[1]!.multiplierApplied).toBe(true)
+  })
 })

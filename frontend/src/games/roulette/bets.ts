@@ -197,27 +197,58 @@ export interface BetOutcome {
   bet: Bet
   payout: number
   won: boolean
+  multiplierApplied?: boolean
+}
+
+export interface MultiplierBoost {
+  pocket: number
+  multiplier: number
 }
 
 export interface SpinResolution {
   outcomes: BetOutcome[]
   totalPayout: number
   totalStaked: number
+  multiplierCost: number
   net: number
+  multiplierHit: boolean
 }
 
-export function resolveSpin(bets: Bet[], spinResult: number): SpinResolution {
+function betCoversPocket(bet: Bet, pocket: number): boolean {
+  return bet.numbers.includes(pocket)
+}
+
+export function resolveSpin(
+  bets: Bet[],
+  spinResult: number,
+  boost?: MultiplierBoost | null,
+): SpinResolution {
+  const multiplierCost = boost?.multiplier ?? 0
+  const boostActive =
+    boost != null && spinResult === boost.pocket && boost.multiplier > 1
+
   const outcomes: BetOutcome[] = bets.map((bet) => {
-    const payout = resolveBet(bet, spinResult)
-    return { bet, payout, won: payout > 0 }
+    let payout = resolveBet(bet, spinResult)
+    const won = payout > 0
+    let multiplierApplied = false
+
+    if (boostActive && won && betCoversPocket(bet, boost.pocket)) {
+      payout *= boost.multiplier
+      multiplierApplied = true
+    }
+
+    return { bet, payout, won, multiplierApplied }
   })
+
   const totalPayout = outcomes.reduce((sum, o) => sum + o.payout, 0)
   const totalStaked = bets.reduce((sum, b) => sum + b.amount, 0)
   return {
     outcomes,
     totalPayout,
     totalStaked,
-    net: totalPayout - totalStaked,
+    multiplierCost,
+    net: totalPayout - totalStaked - multiplierCost,
+    multiplierHit: outcomes.some((o) => o.multiplierApplied),
   }
 }
 

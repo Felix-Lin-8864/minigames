@@ -24,6 +24,8 @@ interface BettingTableProps {
   selectedChip: number
   phase: GamePhase
   spinResult: number | null
+  boostedPocket: number | null
+  multiplier: number | null
   onPlaceBet: (bet: Bet) => void
 }
 
@@ -68,6 +70,32 @@ function ChipMarker({ amount }: { amount: number }) {
   )
 }
 
+function BoostBadge({ multiplier }: { multiplier: number }) {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        zIndex: 4,
+        px: 0.5,
+        py: 0.1,
+        borderRadius: 1,
+        bgcolor: 'warning.main',
+        color: 'warning.contrastText',
+        fontSize: '0.6rem',
+        fontWeight: 700,
+        fontFamily: '"Fredoka", sans-serif',
+        lineHeight: 1.2,
+        pointerEvents: 'none',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+      }}
+    >
+      {multiplier}×
+    </Box>
+  )
+}
+
 function PocketCell({
   number,
   onClick,
@@ -75,6 +103,8 @@ function PocketCell({
   highlighted,
   disabled,
   fullHeight,
+  boosted,
+  boostMultiplier,
 }: {
   number: number
   onClick: () => void
@@ -82,6 +112,8 @@ function PocketCell({
   highlighted: boolean
   disabled: boolean
   fullHeight?: boolean
+  boosted?: boolean
+  boostMultiplier?: number
 }) {
   const data = NUMBER_DATA[number]!
   return (
@@ -96,7 +128,7 @@ function PocketCell({
         justifyContent: 'center',
         cursor: disabled ? 'default' : 'pointer',
         border: '1px solid rgba(255,255,255,0.15)',
-        outline: highlighted ? '2px solid #fbbf24' : 'none',
+        outline: highlighted ? '2px solid #fbbf24' : boosted ? '2px solid #f59e0b' : 'none',
         outlineOffset: -2,
         fontFamily: '"Fredoka", sans-serif',
         fontWeight: 600,
@@ -107,6 +139,7 @@ function PocketCell({
       }}
     >
       {number}
+      {boosted && boostMultiplier != null && <BoostBadge multiplier={boostMultiplier} />}
       <ChipMarker amount={chipAmount} />
     </Box>
   )
@@ -186,6 +219,8 @@ export function BettingTable({
   selectedChip,
   phase,
   spinResult,
+  boostedPocket,
+  multiplier,
   onPlaceBet,
 }: BettingTableProps) {
   const disabled = phase === 'revealing'
@@ -229,6 +264,8 @@ export function BettingTable({
               highlighted={spinResult === 0}
               disabled={disabled}
               fullHeight
+              boosted={boostedPocket === 0}
+              boostMultiplier={multiplier ?? undefined}
             />
           </Box>
 
@@ -250,6 +287,8 @@ export function BettingTable({
                             chipAmount={zoneAmount('straight', [n])}
                             highlighted={spinResult === n}
                             disabled={disabled}
+                            boosted={boostedPocket === n}
+                            boostMultiplier={multiplier ?? undefined}
                           />
                         ))}
                       </Box>
@@ -425,13 +464,6 @@ export function BettingTable({
           <Box sx={{ width: COL_BET_W }} />
         </Box>
       </Box>
-
-      {!disabled && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Tap a number or outside area to place a {selectedChip}-tadpole bet. Use edges between
-          numbers for splits, corners, and six-lines.
-        </Typography>
-      )}
     </Box>
   )
 }

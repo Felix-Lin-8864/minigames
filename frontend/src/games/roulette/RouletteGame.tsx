@@ -53,11 +53,21 @@ function parseBetInput(input: string): number | null {
   return value
 }
 
+function parseBoostInput(input: string): number | null {
+  const trimmed = input.trim()
+  if (trimmed === '' || trimmed === '0') return 0
+  const value = Math.floor(Number(trimmed))
+  if (!Number.isFinite(value) || value < 0) return null
+  if (value > 0 && value < MIN_BET) return 0
+  return value
+}
+
 export function RouletteGame() {
   const {
     snapshot,
     wallet,
     setChip,
+    setBoostAmount,
     placeBet,
     clearBets,
     rebet,
@@ -66,11 +76,14 @@ export function RouletteGame() {
   } = useRouletteGame()
 
   const [betInput, setBetInput] = useState(String(MIN_BET))
+  const [boostInput, setBoostInput] = useState('0')
 
   const isBetting = snapshot.phase === 'betting'
   const showOverlay = snapshot.phase === 'revealing'
   const canSpin =
-    isBetting && snapshot.pendingBets.length > 0 && wallet.balance >= snapshot.totalStaked
+    isBetting &&
+    snapshot.pendingBets.length > 0 &&
+    wallet.balance >= snapshot.totalWager
 
   function handleBetInputChange(value: string) {
     setBetInput(value)
@@ -78,11 +91,21 @@ export function RouletteGame() {
     if (parsed !== null) setChip(parsed)
   }
 
+  function handleBoostInputChange(value: string) {
+    setBoostInput(value)
+    const parsed = parseBoostInput(value)
+    if (parsed !== null) setBoostAmount(parsed)
+  }
+
   function handlePlayAgain() {
     void completeRound()
   }
 
   const spinColor = snapshot.spinResult != null ? NUMBER_DATA[snapshot.spinResult]!.color : null
+  const boostedColor =
+    snapshot.boostedPocket != null ? NUMBER_DATA[snapshot.boostedPocket]!.color : null
+  const showBoostOnTable = showOverlay && snapshot.boostedPocket != null
+  const hadBoost = snapshot.boostAmount >= MIN_BET && snapshot.boostedPocket != null
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -118,29 +141,73 @@ export function RouletteGame() {
               }}
             >
               <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-                <Typography variant="overline" color="text.secondary">
-                  Winning number
-                </Typography>
-                <Box
-                  sx={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: '"Fredoka", sans-serif',
-                    fontWeight: 700,
-                    fontSize: '2rem',
-                    ...(spinColor ? pocketColorSx(spinColor) : {}),
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                  }}
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={3}
+                  sx={{ alignItems: 'center', justifyContent: 'center' }}
                 >
-                  {snapshot.spinResult}
-                </Box>
-                <Typography variant="body1" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
-                  {spinColor}
-                </Typography>
+                  <Stack spacing={1} sx={{ alignItems: 'center' }}>
+                    <Typography variant="overline" color="text.secondary">
+                      Winning number
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: '"Fredoka", sans-serif',
+                        fontWeight: 700,
+                        fontSize: '2rem',
+                        ...(spinColor ? pocketColorSx(spinColor) : {}),
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      {snapshot.spinResult}
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ textTransform: 'capitalize' }}
+                    >
+                      {spinColor}
+                    </Typography>
+                  </Stack>
+
+                  {hadBoost && (
+                    <Stack spacing={1} sx={{ alignItems: 'center' }}>
+                      <Typography variant="overline" color="warning.main">
+                        Boosted pocket
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: 72,
+                          height: 72,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontFamily: '"Fredoka", sans-serif',
+                          fontWeight: 700,
+                          fontSize: '2rem',
+                          outline: '3px solid',
+                          outlineColor: 'warning.main',
+                          outlineOffset: 2,
+                          ...(boostedColor ? pocketColorSx(boostedColor) : {}),
+                          boxShadow: '0 4px 20px rgba(245, 158, 11, 0.35)',
+                        }}
+                      >
+                        {snapshot.boostedPocket}
+                      </Box>
+                      <Typography variant="body2" color="warning.main">
+                        {snapshot.boostAmount}× multiplier
+                        {snapshot.multiplierHit ? ' · applied' : ''}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
                 <Typography
                   variant="h4"
                   sx={{
@@ -190,6 +257,14 @@ export function RouletteGame() {
                 min={MIN_BET}
                 step={1}
               />
+              <NumericInput
+                label="Boost"
+                value={boostInput}
+                onChange={handleBoostInputChange}
+                min={0}
+                step={1}
+                placeholder="0"
+              />
               {isBetting && (
                 <>
                   <Button
@@ -209,17 +284,29 @@ export function RouletteGame() {
               )}
             </Stack>
 
+            {isBetting && snapshot.boostAmount >= MIN_BET && (
+              <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+                {formatTadpoles(snapshot.boostAmount)} for {snapshot.boostAmount}× on a random
+                pocket (revealed on spin)
+              </Typography>
+            )}
+
             <BettingTable
               pendingBets={snapshot.pendingBets}
               selectedChip={snapshot.selectedChip}
               phase={snapshot.phase}
               spinResult={snapshot.spinResult}
+              boostedPocket={showBoostOnTable ? snapshot.boostedPocket : null}
+              multiplier={showBoostOnTable ? snapshot.boostAmount : null}
               onPlaceBet={placeBet}
             />
 
-            {snapshot.pendingBets.length > 0 && (
+            {(snapshot.pendingBets.length > 0 || snapshot.boostCost > 0) && (
               <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
                 Total staked: {formatTadpoles(snapshot.totalStaked)}
+                {snapshot.boostCost > 0 && ` · Boost: ${formatTadpoles(snapshot.boostCost)}`}
+                {snapshot.totalWager > 0 &&
+                  ` · Total wager: ${formatTadpoles(snapshot.totalWager)}`}
               </Typography>
             )}
 
@@ -233,11 +320,17 @@ export function RouletteGame() {
 
             {isBetting &&
               snapshot.pendingBets.length > 0 &&
-              wallet.balance < snapshot.totalStaked && (
+              wallet.balance < snapshot.totalWager && (
                 <Alert severity="warning" sx={{ mt: 1 }}>
-                  Not enough tadpoles to cover all bets.
+                  Not enough tadpoles to cover all bets
+                  {snapshot.boostCost > 0 ? ' and the boost.' : '.'}
                 </Alert>
               )}
+            
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Tap a number or outside area to place a bet. Use edges between numbers for splits, corners, and six-lines.<br/>
+              Spend tadpoles to add a booster to a random pocket. If the boosted pocket hits, multiply your winnings by the boosted amount! Enter 0 to opt out.
+            </Typography>
           </Stack>
         </Paper>
       </Stack>

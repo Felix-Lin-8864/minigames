@@ -13,6 +13,11 @@ export interface RouletteSnapshot {
   message: string | null
   resolutionId: number
   totalStaked: number
+  boostAmount: number
+  boostedPocket: number | null
+  boostCost: number
+  totalWager: number
+  multiplierHit: boolean
   canRebet: boolean
 }
 
@@ -27,13 +32,17 @@ export interface RouletteState {
   recentSpins: number[]
   message: string | null
   resolutionId: number
+  boostAmount: number
+  boostedPocket: number | null
+  multiplierHit: boolean
 }
 
 export type RouletteAction =
   | { type: 'set_chip'; amount: number }
+  | { type: 'set_boost_amount'; amount: number }
   | { type: 'place_bet'; bet: Bet }
   | { type: 'remove_bet'; index: number }
   | { type: 'clear_bets' }
   | { type: 'rebet' }
-  | { type: 'spin'; spinResult: number }
+  | { type: 'spin'; spinResult: number; boostedPocket?: number }
   | { type: 'complete_round' }
