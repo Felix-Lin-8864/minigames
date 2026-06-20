@@ -1,3 +1,4 @@
+import AbcIcon from '@mui/icons-material/Abc'
 import PsychologyIcon from '@mui/icons-material/Psychology'
 import BoltIcon from '@mui/icons-material/Bolt'
 import type { ElementType } from 'react'
@@ -48,6 +49,14 @@ export const gameMetadata: GameMetadata[] = [
     statFields: [
       { key: 'fastestReaction', label: 'Fastest Reaction', format: 'duration' },
     ],
+  },
+  {
+    id: 'anagrams',
+    name: 'Anagrams',
+    description: 'Form words from random letters and rack up points before time runs out.',
+    route: '/games/anagrams',
+    icon: AbcIcon,
+    statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
   },
 ]
 

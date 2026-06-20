@@ -103,7 +103,7 @@ export function SnakeGame() {
       </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-        Green +1, Gold +3, Purple length - 1, Red smash 1 wall.<br/>
+        Green +1 | Gold +3 | Purple length - 1 | Red smash 1 wall<br/>
         Every 10 points the map reshuffles.<br/>
       </Typography>
 
