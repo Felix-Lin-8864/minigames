@@ -1,4 +1,5 @@
 import { PER_DECK_VALUE_COUNTS, DECK_COUNT, RANKS, SUITS, type CardValueKey } from './constants'
+import type { RemainingBySuitRank } from './pairBet'
 import type { Card, Rank, Suit } from './types'
 
 export function rankToValueKey(rank: Rank): CardValueKey {
@@ -28,12 +29,42 @@ export function buildShoePool(): Card[] {
   return pool
 }
 
-export function createInitialRemainingCounts(): Record<CardValueKey, number> {
-  const counts = {} as Record<CardValueKey, number>
-  for (const [key, perDeck] of Object.entries(PER_DECK_VALUE_COUNTS) as [CardValueKey, number][]) {
-    counts[key] = perDeck * DECK_COUNT
+export function createInitialRemainingBySuitRank(): RemainingBySuitRank {
+  const counts = {} as RemainingBySuitRank
+  for (const suit of SUITS) {
+    counts[suit] = {} as Record<Rank, number>
+    for (const rank of RANKS) {
+      counts[suit][rank] = DECK_COUNT
+    }
   }
   return counts
+}
+
+export function deriveValueCountsFromSuitRank(
+  remainingBySuitRank: RemainingBySuitRank,
+): Record<CardValueKey, number> {
+  const counts = {} as Record<CardValueKey, number>
+  for (const key of Object.keys(PER_DECK_VALUE_COUNTS) as CardValueKey[]) {
+    counts[key] = 0
+  }
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      counts[rankToValueKey(rank)] += remainingBySuitRank[suit][rank]
+    }
+  }
+  return counts
+}
+
+export function cloneRemainingBySuitRank(remaining: RemainingBySuitRank): RemainingBySuitRank {
+  const clone = {} as RemainingBySuitRank
+  for (const suit of SUITS) {
+    clone[suit] = { ...remaining[suit] }
+  }
+  return clone
+}
+
+export function createInitialRemainingCounts(): Record<CardValueKey, number> {
+  return deriveValueCountsFromSuitRank(createInitialRemainingBySuitRank())
 }
 
 export function cardLabel(card: Card): string {

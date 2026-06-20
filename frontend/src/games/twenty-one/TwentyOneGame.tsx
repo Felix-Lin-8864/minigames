@@ -4,18 +4,19 @@ import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
-import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { NumericInput } from '../../components/NumericInput'
 import { FrogDollarIcon } from '../../components/icons/FrogDollarIcon'
 import { useWallet } from '../../wallet/useWallet'
 import { formatTadpoles, formatTadpolesFixed } from '../../wallet/tadpoleAmount'
-import { MIN_BET } from './constants'
+import { MIN_BET, MIN_PAIR_BET } from './constants'
 import { getHandValue } from './handValue'
 import { HiLoPanel } from './HiLoPanel'
+import { PAIR_RESULT_LABELS } from './pairBet'
 import { readPanelPreferences, writePanelPreferences } from './panelPreferences'
 import { PlayingCard } from './PlayingCard'
 import { StatPanel } from './StatPanel'
@@ -24,6 +25,15 @@ import type { TwentyOneSnapshot } from './types'
 import { useTwentyOneGame } from './useTwentyOneGame'
 
 const RESULT_BANNER_DELAY_MS = 2000
+const PAIR_REVEAL_DELAY_MS = 2000
+
+function parsePairBetInput(input: string): number {
+  const trimmed = input.trim()
+  if (trimmed === '' || trimmed === '0') return 0
+  const value = Math.floor(Number(trimmed))
+  if (!Number.isFinite(value) || value < MIN_PAIR_BET) return -1
+  return value
+}
 
 function TadpoleStack({
   amount,
@@ -66,6 +76,18 @@ function resultHeadline(snapshot: TwentyOneSnapshot): string {
   return 'Push'
 }
 
+function pairBetNotificationMessage(snapshot: TwentyOneSnapshot): string {
+  if (!snapshot.pairBetResult) return ''
+  const tier = PAIR_RESULT_LABELS[snapshot.pairBetResult]
+  if (snapshot.pairBetPayout > 0) {
+    return `Pair bet: ${tier} — +${formatTadpoles(snapshot.pairBetPayout)} tadpoles`
+  }
+  if (snapshot.pairBetResult === 'none') {
+    return `Pair bet: ${tier} — side wager lost`
+  }
+  return `Pair bet: ${tier}`
+}
+
 function parseBetInput(input: string): number | null {
   const trimmed = input.trim()
   if (trimmed === '') return null
@@ -78,7 +100,9 @@ export function TwentyOneGame() {
   const {
     snapshot,
     setBet,
+    setPairBet,
     deal,
+    continueAfterPair,
     hit,
     stand,
     doubleDown,
@@ -91,9 +115,11 @@ export function TwentyOneGame() {
   const { wallet } = useWallet()
   const [panels, setPanels] = useState(readPanelPreferences)
   const [betInput, setBetInput] = useState(String(MIN_BET))
+  const [pairBetInput, setPairBetInput] = useState('')
   const [showResultBanner, setShowResultBanner] = useState(false)
   const [reshuffleNoticeOpen, setReshuffleNoticeOpen] = useState(false)
   const creditedResolutionRef = useRef(0)
+  const pairRevealHandledRef = useRef(0)
   const prevDiscardCountRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -107,6 +133,20 @@ export function TwentyOneGame() {
     }
     prevDiscardCountRef.current = discardCount
   }, [snapshot.shoe.discardCount])
+
+  useEffect(() => {
+    if (snapshot.phase !== 'pair_reveal') return
+
+    const handKey = snapshot.shoe.discardCount
+    const timeoutId = window.setTimeout(() => {
+      if (pairRevealHandledRef.current !== handKey) {
+        pairRevealHandledRef.current = handKey
+        void continueAfterPair()
+      }
+    }, PAIR_REVEAL_DELAY_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [snapshot.phase, snapshot.shoe.discardCount, continueAfterPair])
 
   useEffect(() => {
     if (snapshot.phase !== 'resolved') {
@@ -129,6 +169,10 @@ export function TwentyOneGame() {
 
   const isBetting = snapshot.phase === 'betting' || snapshot.phase === 'resolved'
   const parsedBet = parseBetInput(betInput)
+  const parsedPairBet = parsePairBetInput(pairBetInput)
+  const pairBetInvalid = parsedPairBet < 0
+  const totalWager =
+    parsedBet !== null ? parsedBet + (parsedPairBet > 0 ? parsedPairBet : 0) : null
   const activeHand = snapshot.playerHands[snapshot.activeHandIndex]
   const staked = totalStaked(snapshot)
   const dealerValue =
@@ -139,7 +183,9 @@ export function TwentyOneGame() {
   async function handleDeal() {
     const bet = parseBetInput(betInput)
     if (bet === null) return
-    await deal(bet)
+    const pairBet = parsePairBetInput(pairBetInput)
+    if (pairBet < 0) return
+    await deal(bet, pairBet)
   }
 
   function handleBetChange(value: string) {
@@ -147,6 +193,14 @@ export function TwentyOneGame() {
     const bet = parseBetInput(value)
     if (bet !== null) {
       setBet(bet)
+    }
+  }
+
+  function handlePairBetChange(value: string) {
+    setPairBetInput(value)
+    const pairBet = parsePairBetInput(value)
+    if (pairBet >= 0) {
+      setPairBet(pairBet)
     }
   }
 
@@ -293,22 +347,30 @@ export function TwentyOneGame() {
           </Paper>
 
           {isBetting && (
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', width: '100%' }}>
-              <TextField
-                type="number"
-                size="small"
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end', flexWrap: 'wrap', width: '100%' }}>
+              <NumericInput
                 label="Bet"
                 value={betInput}
-                onChange={(event) => handleBetChange(event.target.value)}
-                slotProps={{ htmlInput: { min: MIN_BET, step: 1 } }}
-                sx={{ width: 120 }}
+                onChange={handleBetChange}
+                min={MIN_BET}
+                step={1}
+              />
+              <NumericInput
+                label="Pair bet"
+                value={pairBetInput}
+                onChange={handlePairBetChange}
+                placeholder="0"
+                min={0}
+                step={1}
               />
               <Button
                 variant="contained"
                 onClick={handleDeal}
                 disabled={
                   parsedBet === null ||
-                  wallet.balance < parsedBet ||
+                  pairBetInvalid ||
+                  totalWager === null ||
+                  wallet.balance < totalWager ||
                   (snapshot.phase === 'resolved' && !showResultBanner)
                 }
               >
@@ -357,6 +419,20 @@ export function TwentyOneGame() {
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2 }}>
         Dealer stands on 17 · blackjack pays 3:2 · up to 2 splits · no double after split
       </Typography>
+
+      <Snackbar
+        open={snapshot.phase === 'pair_reveal' && snapshot.pairBetResult != null}
+        autoHideDuration={PAIR_REVEAL_DELAY_MS}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snapshot.pairBetPayout > 0 ? 'success' : 'info'}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {pairBetNotificationMessage(snapshot)}
+        </Alert>
+      </Snackbar>
 
       <Snackbar
         open={reshuffleNoticeOpen}

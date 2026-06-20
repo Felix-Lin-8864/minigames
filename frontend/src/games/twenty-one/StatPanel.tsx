@@ -5,6 +5,8 @@ import Typography from '@mui/material/Typography'
 import { CARD_VALUE_KEYS } from './constants'
 import { getOptimalMove, OPTIMAL_MOVE_LABELS } from './basicStrategy'
 import { dealerUpCardRank } from './hand'
+import { PAIR_RESULT_LABELS } from './pairBet'
+import type { PairResult } from './pairBet'
 import type { TwentyOneSnapshot } from './types'
 
 interface StatPanelProps {
@@ -12,6 +14,8 @@ interface StatPanelProps {
   canDouble: boolean
   canSplit: boolean
 }
+
+const PAIR_TIER_KEYS: PairResult[] = ['ace', 'perfect', 'colored', 'mixed', 'none']
 
 export function StatPanel({ snapshot, canDouble, canSplit }: StatPanelProps) {
   const activeHand = snapshot.playerHands[snapshot.activeHandIndex]
@@ -54,9 +58,28 @@ export function StatPanel({ snapshot, canDouble, canSplit }: StatPanelProps) {
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
         Optimal play
       </Typography>
-      <Typography variant="h6" sx={{ fontFamily: '"Fredoka", sans-serif' }}>
+      <Typography variant="h6" sx={{ fontFamily: '"Fredoka", sans-serif', mb: 2 }}>
         {optimalMove}
       </Typography>
+
+      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        Pair bet odds
+      </Typography>
+      <Stack spacing={0.75} sx={{ mb: 2 }}>
+        {PAIR_TIER_KEYS.map((tier) => (
+          <Box
+            key={tier}
+            sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}
+          >
+            <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+              {PAIR_RESULT_LABELS[tier]}
+            </Typography>
+            <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              {(snapshot.shoe.pairBetProbabilities[tier] * 100).toFixed(2)}%
+            </Typography>
+          </Box>
+        ))}
+      </Stack>
 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
         {snapshot.shoe.totalRemaining} cards unseen · hand{' '}

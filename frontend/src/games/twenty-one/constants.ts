@@ -7,7 +7,10 @@ export const SHOE_SIZE = DECK_COUNT * 52
 /** Reshuffle after this many completed hands. */
 export const HANDS_PER_SHOE = 5
 
-/** Minimum wager in tadpoles. */
+/** Minimum pair-bet side wager in tadpoles. */
+export const MIN_PAIR_BET = 5
+
+/** Minimum main-hand wager in tadpoles. */
 export const MIN_BET = 10
 
 /** Dealer stands on all 17s, including soft 17. */

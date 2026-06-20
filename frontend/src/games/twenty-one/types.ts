@@ -1,5 +1,6 @@
 import type { CardValueKey } from './constants'
 import type { SUITS, RANKS } from './constants'
+import type { PairResult, PairTierProbabilities, RemainingBySuitRank } from './pairBet'
 
 export type Suit = (typeof SUITS)[number]
 export type Rank = (typeof RANKS)[number]
@@ -33,7 +34,7 @@ export interface PlayerHand {
   payout: number
 }
 
-export type GamePhase = 'betting' | 'playing' | 'dealer' | 'resolved'
+export type GamePhase = 'betting' | 'pair_reveal' | 'playing' | 'dealer' | 'resolved'
 
 export interface CardProbabilities {
   [key: string]: number
@@ -46,6 +47,7 @@ export interface ShoeSnapshot {
   totalRemaining: number
   remainingByValue: Record<CardValueKey, number>
   probabilities: CardProbabilities
+  pairBetProbabilities: PairTierProbabilities
   runningCount: number
   trueCount: number
 }
@@ -57,6 +59,10 @@ export interface TwentyOneSnapshot {
   dealerHand: Card[]
   dealerHoleRevealed: boolean
   bet: number
+  pairBet: number
+  pairBetResult: PairResult | null
+  pairBetPayout: number
+  pairBetOriginalCards: Card[] | null
   totalStaked: number
   message: string | null
   lastHandNet: number
@@ -69,6 +75,7 @@ export interface ShoeState {
   queue: Card[]
   discardPile: Card[]
   handsCompleted: number
+  remainingBySuitRank: RemainingBySuitRank
   remainingByValue: Record<CardValueKey, number>
   runningCount: number
 }
@@ -80,6 +87,11 @@ export interface TwentyOneState {
   dealerHand: Card[]
   dealerHoleRevealed: boolean
   pendingBet: number
+  pendingPairBet: number
+  pairBetWager: number
+  pairBetResult: PairResult | null
+  pairBetPayout: number
+  pairBetOriginalCards: Card[] | null
   message: string | null
   lastHandNet: number
   shoe: ShoeState
@@ -89,7 +101,9 @@ export interface TwentyOneState {
 
 export type TwentyOneAction =
   | { type: 'set_bet'; bet: number }
-  | { type: 'deal'; bet: number }
+  | { type: 'set_pair_bet'; pairBet: number }
+  | { type: 'deal'; bet: number; pairBet: number }
+  | { type: 'continue_after_pair' }
   | { type: 'hit' }
   | { type: 'stand' }
   | { type: 'double'; additionalBet: number }

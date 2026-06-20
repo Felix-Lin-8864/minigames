@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { getOptimalMove } from './basicStrategy'
 import { createCard } from './cards'
-import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, SHOE_SIZE } from './constants'
+import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, SHOE_SIZE } from './constants'
 import { createInitialState, twentyOneReducer, toSnapshot } from './gameLogic'
+import { evaluatePairBet } from './pairBet'
 import { fisherYatesShuffle } from './shuffle'
 import * as shoeModule from './shoe'
 import * as shuffleModule from './shuffle'
@@ -156,8 +157,8 @@ describe('fisherYatesShuffle', () => {
   })
 })
 
-function dealHand(state: ReturnType<typeof createInitialState>) {
-  return twentyOneReducer(state, { type: 'deal', bet: state.pendingBet })
+function dealHand(state: ReturnType<typeof createInitialState>, pairBet = 0) {
+  return twentyOneReducer(state, { type: 'deal', bet: state.pendingBet, pairBet })
 }
 
 function doubleDown(state: ReturnType<typeof createInitialState>) {
@@ -267,5 +268,45 @@ describe('game reducer', () => {
     expect(state.shoe.discardPile.length).toBeLessThanOrEqual(4)
     expect(state.shoe.runningCount).toBe(0)
     expect(runningCountBeforeReshuffle).not.toBe(0)
+  })
+
+  it('rejects pair bets below the minimum', () => {
+    const state = createInitialState(createShoe(deterministicRandom([0.5])))
+    const next = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: MIN_PAIR_BET - 1 })
+    expect(next.phase).toBe('betting')
+    expect(next.playerHands).toHaveLength(0)
+  })
+
+  it('evaluates the pair bet on the initial two cards before play continues', () => {
+    let state = createInitialState(createShoe(deterministicRandom([0.5])))
+    state = twentyOneReducer(state, { type: 'set_bet', bet: MIN_BET })
+    state = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: MIN_PAIR_BET })
+    expect(state.phase).toBe('pair_reveal')
+    expect(state.pairBetWager).toBe(MIN_PAIR_BET)
+    expect(state.pairBetOriginalCards).toHaveLength(2)
+    expect(state.pairBetResult).toBe(
+      evaluatePairBet(state.pairBetOriginalCards![0]!, state.pairBetOriginalCards![1]!),
+    )
+  })
+
+  it('resolves pair bet independently of subsequent play', () => {
+    for (let seed = 0; seed < 150; seed += 1) {
+      const random = deterministicRandom([seed / 100, 0.5, 0.25])
+      let state = createInitialState(createShoe(random))
+      state = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: MIN_PAIR_BET })
+      if (state.phase !== 'pair_reveal') continue
+
+      const pairResult = state.pairBetResult
+      const pairPayout = state.pairBetPayout
+      state = twentyOneReducer(state, { type: 'continue_after_pair' })
+      if (state.phase !== 'playing') continue
+
+      state = twentyOneReducer(state, { type: 'stand' })
+      expect(state.pairBetResult).toBe(pairResult)
+      expect(state.pairBetPayout).toBe(pairPayout)
+      return
+    }
+
+    throw new Error('could not find a seed for pair-bet independence test')
   })
 })

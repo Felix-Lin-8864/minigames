@@ -2,8 +2,10 @@ import {
   DOUBLE_AFTER_SPLIT,
   MAX_SPLITS,
   MIN_BET,
+  MIN_PAIR_BET,
   SPLIT_ACES_ONE_CARD,
 } from './constants'
+import { cloneRemainingBySuitRank } from './cards'
 import {
   allPlayerHandsDone,
   blackjackPayout,
@@ -12,6 +14,7 @@ import {
   winPayout,
 } from './hand'
 import { getHandValue, isBlackjack, isBusted, isPair } from './handValue'
+import { evaluatePairBet, getPairPayout } from './pairBet'
 import {
   completeHand,
   createShoe,
@@ -48,6 +51,11 @@ export function createInitialState(shoe?: ShoeState): TwentyOneState {
     dealerHand: [],
     dealerHoleRevealed: false,
     pendingBet: MIN_BET,
+    pendingPairBet: 0,
+    pairBetWager: 0,
+    pairBetResult: null,
+    pairBetPayout: 0,
+    pairBetOriginalCards: null,
     message: null,
     lastHandNet: 0,
     shoe: shoe ?? createShoe(),
@@ -69,6 +77,7 @@ function cloneShoe(shoe: ShoeState): ShoeState {
     queue: [...shoe.queue],
     discardPile: [...shoe.discardPile],
     handsCompleted: shoe.handsCompleted,
+    remainingBySuitRank: cloneRemainingBySuitRank(shoe.remainingBySuitRank),
     remainingByValue: { ...shoe.remainingByValue },
     runningCount: 0,
   }
@@ -82,9 +91,9 @@ function activeHand(state: TwentyOneState): PlayerHand | undefined {
 
 export function totalStakedAmount(state: TwentyOneState): number {
   if (state.playerHands.length > 0) {
-    return state.playerHands.reduce((sum, hand) => sum + hand.bet, 0)
+    return state.playerHands.reduce((sum, hand) => sum + hand.bet, 0) + state.pairBetWager
   }
-  return state.pendingBet
+  return state.pendingBet + state.pendingPairBet
 }
 
 function canDoubleHand(hand: PlayerHand): boolean {
@@ -171,7 +180,11 @@ function checkImmediateBlackjacks(state: TwentyOneState): TwentyOneState {
   })
 }
 
-function dealInitialHand(state: TwentyOneState): TwentyOneState {
+function finishDealAfterPairReveal(state: TwentyOneState): TwentyOneState {
+  return checkImmediateBlackjacks(state)
+}
+
+function dealInitialHand(state: TwentyOneState, pairBet: number): TwentyOneState {
   const bet = state.pendingBet
   const shoe = cloneShoe(state.shoe)
 
@@ -185,10 +198,13 @@ function dealInitialHand(state: TwentyOneState): TwentyOneState {
     status: isBlackjack(playerCards) ? 'blackjack' : 'active',
   }
 
-  let next: TwentyOneState = {
+  const pairBetResult = pairBet > 0 ? evaluatePairBet(playerCards[0]!, playerCards[1]!) : null
+  const pairBetPayout =
+    pairBet > 0 && pairBetResult ? getPairPayout(pairBetResult, pairBet) : 0
+
+  const base: TwentyOneState = {
     ...state,
     shoe,
-    phase: 'playing',
     playerHands: [playerHand],
     activeHandIndex: 0,
     dealerHand: [dealerUp, dealerHole],
@@ -196,10 +212,22 @@ function dealInitialHand(state: TwentyOneState): TwentyOneState {
     message: null,
     lastHandNet: 0,
     splitCount: 0,
+    pairBetWager: pairBet,
+    pairBetResult,
+    pairBetPayout,
+    pairBetOriginalCards: pairBet > 0 ? [...playerCards] : null,
   }
 
-  next = checkImmediateBlackjacks(next)
-  return next
+  if (pairBet > 0) {
+    return { ...base, phase: 'pair_reveal' }
+  }
+
+  return finishDealAfterPairReveal({ ...base, phase: 'playing' })
+}
+
+function continueAfterPairReveal(state: TwentyOneState): TwentyOneState {
+  if (state.phase !== 'pair_reveal') return state
+  return finishDealAfterPairReveal({ ...state, phase: 'playing' })
 }
 
 function hitHand(state: TwentyOneState): TwentyOneState {
@@ -387,9 +415,22 @@ export function twentyOneReducer(state: TwentyOneState, action: TwentyOneAction)
         pendingBet: Math.max(MIN_BET, Math.floor(action.bet)),
       }
 
-    case 'deal':
+    case 'set_pair_bet':
+      return {
+        ...state,
+        pendingPairBet: Math.max(0, Math.floor(action.pairBet)),
+      }
+
+    case 'deal': {
       if (state.phase !== 'betting' && state.phase !== 'resolved') return state
-      return dealInitialHand({ ...state, pendingBet: Math.max(MIN_BET, Math.floor(action.bet)) })
+      const bet = Math.max(MIN_BET, Math.floor(action.bet))
+      const pairBet = Math.floor(action.pairBet)
+      if (pairBet > 0 && pairBet < MIN_PAIR_BET) return state
+      return dealInitialHand({ ...state, pendingBet: bet, pendingPairBet: pairBet }, pairBet)
+    }
+
+    case 'continue_after_pair':
+      return continueAfterPairReveal(state)
 
     case 'hit':
       if (state.phase !== 'playing') return state
@@ -419,6 +460,10 @@ export function twentyOneReducer(state: TwentyOneState, action: TwentyOneAction)
         message: null,
         lastHandNet: 0,
         splitCount: 0,
+        pairBetWager: 0,
+        pairBetResult: null,
+        pairBetPayout: 0,
+        pairBetOriginalCards: null,
       }
 
     default:
@@ -440,6 +485,10 @@ export function toSnapshot(state: TwentyOneState): TwentyOneSnapshot {
     dealerHand: state.dealerHand,
     dealerHoleRevealed: state.dealerHoleRevealed,
     bet,
+    pairBet: state.pairBetWager || state.pendingPairBet,
+    pairBetResult: state.pairBetResult,
+    pairBetPayout: state.pairBetPayout,
+    pairBetOriginalCards: state.pairBetOriginalCards,
     totalStaked: totalStakedAmount(state),
     message: state.message,
     lastHandNet: state.lastHandNet,

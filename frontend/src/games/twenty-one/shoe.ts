@@ -5,10 +5,12 @@ import {
   type CardValueKey,
 } from './constants'
 import {
-  createInitialRemainingCounts,
+  cloneRemainingBySuitRank,
+  createInitialRemainingBySuitRank,
+  deriveValueCountsFromSuitRank,
   hiLoValue,
-  rankToValueKey,
 } from './cards'
+import { getPairBetProbabilities } from './pairBet'
 import { shuffleShoePool } from './shuffle'
 import type { Card, ShoeState } from './types'
 
@@ -16,11 +18,13 @@ export type { ShoeState } from './types'
 
 export function createShoe(random?: () => number): ShoeState {
   const queue = shuffleShoePool(random)
+  const remainingBySuitRank = createInitialRemainingBySuitRank()
   return {
     queue,
     discardPile: [],
     handsCompleted: 0,
-    remainingByValue: createInitialRemainingCounts(),
+    remainingBySuitRank,
+    remainingByValue: deriveValueCountsFromSuitRank(remainingBySuitRank),
     runningCount: 0,
   }
 }
@@ -53,8 +57,11 @@ export function cardProbabilities(shoe: ShoeState): Record<CardValueKey, number>
 }
 
 function trackRevealedCard(shoe: ShoeState, card: Card): void {
-  const key = rankToValueKey(card.rank)
-  shoe.remainingByValue[key] = Math.max(0, shoe.remainingByValue[key] - 1)
+  shoe.remainingBySuitRank[card.suit][card.rank] = Math.max(
+    0,
+    shoe.remainingBySuitRank[card.suit][card.rank] - 1,
+  )
+  shoe.remainingByValue = deriveValueCountsFromSuitRank(shoe.remainingBySuitRank)
   shoe.runningCount += hiLoValue(card.rank)
 }
 
@@ -116,7 +123,8 @@ export function completeHand(
     shoe: {
       queue: shoe.queue,
       discardPile: shoe.discardPile,
-      remainingByValue: shoe.remainingByValue,
+      remainingBySuitRank: cloneRemainingBySuitRank(shoe.remainingBySuitRank),
+      remainingByValue: { ...shoe.remainingByValue },
       runningCount: shoe.runningCount,
       handsCompleted,
     },
@@ -141,6 +149,7 @@ export function shoeSnapshot(shoe: ShoeState) {
     totalRemaining: totalRemaining(shoe),
     remainingByValue: { ...shoe.remainingByValue },
     probabilities: cardProbabilities(shoe),
+    pairBetProbabilities: getPairBetProbabilities(shoe.remainingBySuitRank),
     runningCount,
     trueCount: trueCount(shoe),
   }

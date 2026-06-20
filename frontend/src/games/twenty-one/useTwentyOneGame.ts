@@ -8,7 +8,7 @@ import {
   toSnapshot,
   twentyOneReducer,
 } from './gameLogic'
-import { MIN_BET } from './constants'
+import { MIN_BET, MIN_PAIR_BET } from './constants'
 import type { TwentyOneSnapshot } from './types'
 
 export function useTwentyOneGame() {
@@ -22,17 +22,34 @@ export function useTwentyOneGame() {
     dispatch({ type: 'set_bet', bet })
   }, [])
 
-  const deal = useCallback(async (bet: number) => {
+  const setPairBet = useCallback((pairBet: number) => {
+    dispatch({ type: 'set_pair_bet', pairBet })
+  }, [])
+
+  const deal = useCallback(async (bet: number, pairBet: number) => {
     const current = stateRef.current
     if (current.phase !== 'betting' && current.phase !== 'resolved') return false
     if (!Number.isFinite(bet) || bet < MIN_BET) return false
+    if (pairBet > 0 && (!Number.isFinite(pairBet) || pairBet < MIN_PAIR_BET)) return false
 
-    const spent = await spendTadpoles(bet)
+    const totalSpend = bet + pairBet
+    const spent = await spendTadpoles(totalSpend)
     if (!spent) return false
 
-    dispatch({ type: 'deal', bet })
+    dispatch({ type: 'deal', bet, pairBet })
     return true
   }, [spendTadpoles])
+
+  const continueAfterPair = useCallback(async () => {
+    const current = stateRef.current
+    if (current.phase !== 'pair_reveal') return
+
+    if (current.pairBetPayout > 0) {
+      await addTadpoles(current.pairBetPayout)
+    }
+
+    dispatch({ type: 'continue_after_pair' })
+  }, [addTadpoles])
 
   const creditWinnings = useCallback(
     async (snapshot: TwentyOneSnapshot) => {
@@ -89,7 +106,9 @@ export function useTwentyOneGame() {
   return {
     snapshot,
     setBet,
+    setPairBet,
     deal,
+    continueAfterPair,
     hit,
     stand,
     doubleDown,
