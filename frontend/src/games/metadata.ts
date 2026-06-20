@@ -2,6 +2,7 @@ import AbcIcon from '@mui/icons-material/Abc'
 import type { ElementType } from 'react'
 import { FrogIcon } from '../components/icons/FrogIcon'
 import { SnakeIcon } from '../components/icons/SnakeIcon'
+import { TwentyOneIcon } from '../components/icons/TwentyOneIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -43,6 +44,15 @@ export const gameMetadata: GameMetadata[] = [
     icon: AbcIcon,
     category: 'mini',
     statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
+  },
+  {
+    id: 'twenty-one',
+    name: 'Twenty-One',
+    description: 'Bet tadpoles at the blackjack table — optional stats and Hi-Lo panels included.',
+    route: '/games/twenty-one',
+    icon: TwentyOneIcon as ElementType,
+    category: 'frogtune',
+    statFields: [{ key: 'handsWon', label: 'Hands Won', format: 'score' }],
   },
 ]
 

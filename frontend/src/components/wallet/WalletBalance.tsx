@@ -1,6 +1,7 @@
 import Chip from '@mui/material/Chip'
 import Tooltip from '@mui/material/Tooltip'
 import { FrogDollarIcon } from '../icons/FrogDollarIcon'
+import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
 import { useWallet } from '../../wallet/useWallet'
 
 const chipSx = {
@@ -21,10 +22,10 @@ const chipSx = {
 export function WalletBalance() {
   const { wallet, loading } = useWallet()
 
-  const amount = loading ? '…' : wallet.balance.toLocaleString()
+  const amount = loading ? '…' : formatTadpolesFixed(wallet.balance)
   const tooltip = loading
     ? 'Loading wallet…'
-    : `Balance: ${wallet.balance.toLocaleString()} · All-time high: ${wallet.allTimeHigh.toLocaleString()}`
+    : `Balance: ${formatTadpolesFixed(wallet.balance)} · All-time high: ${formatTadpolesFixed(wallet.allTimeHigh)}`
 
   return (
     <Tooltip title={tooltip}>

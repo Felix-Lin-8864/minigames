@@ -4,6 +4,7 @@ import CardContent from '@mui/material/CardContent'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { FrogDollarIcon } from '../icons/FrogDollarIcon'
+import { formatTadpoles } from '../../wallet/tadpoleAmount'
 import { useWallet } from '../../wallet/useWallet'
 
 const statValueSx = {
@@ -36,7 +37,7 @@ function WalletStat({ label, value }: WalletStatProps) {
           }}
         />
         <Typography component="div" sx={statValueSx}>
-          {Number(value).toFixed(2)}
+          {value}
         </Typography>
       </Stack>
     </Box>
@@ -46,8 +47,8 @@ function WalletStat({ label, value }: WalletStatProps) {
 export function WalletCard() {
   const { wallet, loading } = useWallet()
 
-  const balance = loading ? '—' : wallet.balance.toLocaleString()
-  const allTimeHigh = loading ? '—' : wallet.allTimeHigh.toLocaleString()
+  const balance = loading ? '—' : formatTadpoles(wallet.balance)
+  const allTimeHigh = loading ? '—' : formatTadpoles(wallet.allTimeHigh)
 
   return (
     <Card

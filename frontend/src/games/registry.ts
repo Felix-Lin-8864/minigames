@@ -3,6 +3,7 @@ import { gameMetadata, type GameMetadata } from './metadata'
 import { AnagramsPage } from '../pages/games/AnagramsPage'
 import { FroggerPage } from '../pages/games/FroggerPage'
 import { SnakePage } from '../pages/games/SnakePage'
+import { TwentyOnePage } from '../pages/games/TwentyOnePage'
 
 export interface GameDefinition extends GameMetadata {
   component: ComponentType
@@ -12,6 +13,7 @@ const components: Record<string, ComponentType> = {
   snake: SnakePage,
   frogger: FroggerPage,
   anagrams: AnagramsPage,
+  'twenty-one': TwentyOnePage,
 }
 
 export const games: GameDefinition[] = gameMetadata

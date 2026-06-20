@@ -48,6 +48,14 @@ describe('localStorageWalletService', () => {
     expect(wallet.allTimeHigh).toBe(100)
   })
 
+  it('credits half-tadpole blackjack winnings', async () => {
+    await localStorageWalletService.addTadpoles(1)
+    await localStorageWalletService.addTadpoles(1.5)
+
+    const wallet = await localStorageWalletService.getWallet()
+    expect(wallet.balance).toBe(2.5)
+  })
+
   it('backfills all-time high from existing balance', async () => {
     localStorage.setItem(
       STORAGE_KEY,

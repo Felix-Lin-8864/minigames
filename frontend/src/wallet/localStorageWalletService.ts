@@ -1,13 +1,14 @@
 import type { WalletService } from './WalletService'
+import { normalizeTadpoles } from './tadpoleAmount'
 import { createEmptyWallet, type Wallet } from './types'
 
 const STORAGE_KEY = 'minigames:wallet'
 
 function normalizeWallet(parsed: Partial<Wallet>): Wallet {
-  const balance = Math.max(0, Math.floor(parsed.balance ?? 0))
+  const balance = Math.max(0, normalizeTadpoles(parsed.balance ?? 0))
   const allTimeHigh = Math.max(
     balance,
-    Math.max(0, Math.floor(parsed.allTimeHigh ?? balance)),
+    Math.max(0, normalizeTadpoles(parsed.allTimeHigh ?? balance)),
   )
 
   return {
@@ -37,7 +38,7 @@ export const localStorageWalletService: WalletService = {
   },
 
   async addTadpoles(amount) {
-    const earned = Math.max(0, Math.floor(amount))
+    const earned = normalizeTadpoles(Math.max(0, amount))
     if (earned === 0) return readWallet()
 
     const wallet = readWallet()
@@ -52,7 +53,7 @@ export const localStorageWalletService: WalletService = {
   },
 
   async spendTadpoles(amount) {
-    const cost = Math.max(0, Math.floor(amount))
+    const cost = normalizeTadpoles(Math.max(0, amount))
     if (cost === 0) return readWallet()
 
     const wallet = readWallet()
