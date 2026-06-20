@@ -10,13 +10,14 @@ import {
   VISIBLE_COL_MIN,
   VISIBLE_COLS,
   isRiverWorldRow,
+  isLilypadWorldRow,
 } from './constants'
 import {
   buildInitialEntities,
   createInitialRowWorldRows,
   spawnTopRowEntities,
 } from './worldGen'
-import type { Car, Frog, FroggerAction, FroggerSnapshot, FroggerState, Log } from './types'
+import type { Car, Frog, FroggerAction, FroggerSnapshot, FroggerState, Lilypad, Log } from './types'
 
 function createFrog(row = FROG_START_ROW): Frog {
   const startCol = HIDDEN_COLS + Math.floor(VISIBLE_COLS / 2)
@@ -38,6 +39,7 @@ export function createInitialState(): FroggerState {
     frog: createFrog(),
     cars: entities.cars,
     logs: entities.logs,
+    lilypads: entities.lilypads,
     rowWorldRows,
     score: 0,
     nextWorldRow: VIEWPORT_ROWS - FROG_START_ROW,
@@ -60,6 +62,10 @@ function worldRowAt(state: FroggerState, screenRow: number): number {
 
 function isRiverScreenRow(state: FroggerState, screenRow: number): boolean {
   return isRiverWorldRow(worldRowAt(state, screenRow))
+}
+
+function isLilypadScreenRow(state: FroggerState, screenRow: number): boolean {
+  return isLilypadWorldRow(worldRowAt(state, screenRow))
 }
 
 function moveEntities<T extends Car | Log>(entities: T[], delta: number): T[] {
@@ -108,6 +114,13 @@ function clearLogRide(frog: Frog): Frog {
   return { ...frog, onLogId: null, logOffset: 0, x: frog.col }
 }
 
+function isFrogOnLilypad(frog: Frog, lilypads: Lilypad[]): boolean {
+  const center = frogCenterX(frog)
+  return lilypads.some(
+    (pad) => pad.row === frog.row && isPointOnSegment(center, pad.col, 1),
+  )
+}
+
 function isOnLog(frog: Frog, logs: Log[]): Log | null {
   if (frog.onLogId != null) {
     const riding = logs.find((log) => log.id === frog.onLogId)
@@ -152,15 +165,21 @@ function scrollRowsDown(state: FroggerState): FroggerState {
     .map((log) => ({ ...log, row: log.row - 1 }))
     .filter((log) => log.row >= BOTTOM_ROW)
 
+  let lilypads = state.lilypads
+    .map((pad) => ({ ...pad, row: pad.row - 1 }))
+    .filter((pad) => pad.row >= BOTTOM_ROW)
+
   const spawned = spawnTopRowEntities(rowWorldRows[TOP_ROW], state.nextEntityId)
   cars = [...cars, ...spawned.cars]
   logs = [...logs, ...spawned.logs]
+  lilypads = [...lilypads, ...spawned.lilypads]
 
   return {
     ...state,
     rowWorldRows,
     cars,
     logs,
+    lilypads,
     nextWorldRow: state.nextWorldRow + 1,
     nextEntityId: spawned.nextId,
   }
@@ -177,6 +196,11 @@ function validateFrogPlacement(state: FroggerState, frog: Frog): FroggerState | 
     const log = isOnLog(frog, state.logs)
     if (!log) return 'dead'
     return { ...state, frog: rideFrogOnLog(frog, log) }
+  }
+
+  if (isLilypadScreenRow(state, frog.row)) {
+    if (!isFrogOnLilypad(frog, state.lilypads)) return 'dead'
+    return { ...state, frog: clearLogRide(frog) }
   }
 
   return { ...state, frog: clearLogRide(frog) }
@@ -259,6 +283,9 @@ export function froggerReducer(
         const center = frogCenterX(frog)
         if (isFrogOffScreen(center)) return gameOver(state)
         if (!isFrogOnLog(frog, log)) return gameOver(state)
+      } else if (isLilypadScreenRow(next, frog.row)) {
+        if (!isFrogOnLilypad(frog, next.lilypads)) return gameOver(state)
+        frog = clearLogRide(frog)
       } else if (frog.onLogId != null) {
         frog = clearLogRide(frog)
       }
@@ -279,6 +306,7 @@ export function toSnapshot(state: FroggerState) {
     frog: state.frog,
     cars: state.cars,
     logs: state.logs,
+    lilypads: state.lilypads,
     rowWorldRows: state.rowWorldRows,
     score: state.score,
   }

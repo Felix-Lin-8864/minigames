@@ -28,11 +28,18 @@ export interface Log {
   direction: 1 | -1
 }
 
+export interface Lilypad {
+  id: number
+  row: number
+  col: number
+}
+
 export interface FroggerState {
   status: GameStatus
   frog: Frog
   cars: Car[]
   logs: Log[]
+  lilypads: Lilypad[]
   /** World row index for each screen row (bottom-indexed). */
   rowWorldRows: number[]
   score: number
@@ -51,6 +58,7 @@ export interface FroggerSnapshot {
   frog: Frog
   cars: Car[]
   logs: Log[]
+  lilypads: Lilypad[]
   rowWorldRows: number[]
   score: number
 }

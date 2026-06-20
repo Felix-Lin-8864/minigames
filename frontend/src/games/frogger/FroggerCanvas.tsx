@@ -69,11 +69,36 @@ function tileFill(kind: LaneType, col: number, worldRow: number): string {
       return checker ? COLORS.grassLight : COLORS.grassLightAlt
     case 'median':
       return checker ? COLORS.grassLight : COLORS.grassLightAlt
+    case 'lilypad':
+      return checker ? COLORS.river : COLORS.riverAlt
     case 'road':
       return checker ? COLORS.road : COLORS.roadAlt
     case 'river':
       return checker ? COLORS.river : COLORS.riverAlt
   }
+}
+
+function drawLilypadLeaf(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+) {
+  const cx = x + size / 2
+  const cy = y + size / 2
+  const r = size * 0.3
+
+  ctx.fillStyle = COLORS.lilypadLeaf
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, r * 1.15, r, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.strokeStyle = 'rgba(34, 197, 94, 0.4)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(cx, cy - r)
+  ctx.lineTo(cx, cy + r)
+  ctx.stroke()
 }
 
 function drawGrassDetail(
@@ -138,7 +163,7 @@ function drawTile(
     drawGrassDetail(ctx, x, y, size)
   }
   if (kind === 'road') drawRoadDetail(ctx, x, y, size)
-  if (kind === 'river') drawRiverDetail(ctx, x, y, size, logicalCol)
+  if (kind === 'river' || kind === 'lilypad') drawRiverDetail(ctx, x, y, size, logicalCol)
 }
 
 function drawTiles(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
@@ -208,6 +233,15 @@ function drawLogs(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
     }
 
     ctx.restore()
+  })
+}
+
+function drawLilypads(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
+  snapshot.lilypads.forEach((pad) => {
+    if (!isLogicalColVisible(pad.col)) return
+
+    const tile = getTileBounds(pad.col, pad.row)
+    drawLilypadLeaf(ctx, tile.x, tile.y, tile.size)
   })
 }
 
@@ -298,6 +332,7 @@ function render(ctx: CanvasRenderingContext2D, snapshot: FroggerSnapshot) {
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
   drawTiles(ctx, snapshot)
   drawLogs(ctx, snapshot)
+  drawLilypads(ctx, snapshot)
   drawCars(ctx, snapshot)
 
   if (snapshot.status === 'playing') {

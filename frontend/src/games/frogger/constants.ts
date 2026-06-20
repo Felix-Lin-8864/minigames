@@ -27,25 +27,10 @@ export const MOVEMENT_SCALE = 0.006
 export const MOVE_COOLDOWN_MS = 280
 export const MAX_FRAME_DELTA_MS = 32
 
-export const CHUNK_CYCLE = 12
-
-export const ROAD_LANE_CONFIG = [
-  { speed: 0.16, direction: 1 as const, width: 2, count: 2 },
-  { speed: 0.2, direction: -1 as const, width: 2, count: 2 },
-  { speed: 0.18, direction: 1 as const, width: 3, count: 2 },
-  { speed: 0.22, direction: -1 as const, width: 2, count: 3 },
-  { speed: 0.19, direction: 1 as const, width: 3, count: 2 },
-]
-
-export const RIVER_LANE_CONFIG = [
-  { speed: 0.22, direction: 1 as const, width: 3, count: 2 },
-  { speed: 0.28, direction: -1 as const, width: 2, count: 2 },
-  { speed: 0.2, direction: 1 as const, width: 4, count: 2 },
-  { speed: 0.3, direction: -1 as const, width: 2, count: 2 },
-  { speed: 0.25, direction: 1 as const, width: 3, count: 2 },
-]
-
-export type LaneType = 'start' | 'road' | 'median' | 'river' | 'safe'
+export const MIN_LOG_WIDTH = 2
+export const MAX_LOG_WIDTH = 4
+export const MIN_VEHICLE_WIDTH = 1
+export const MAX_VEHICLE_WIDTH = 3
 
 export const COLORS = {
   tileGap: '#070d0b',
@@ -62,6 +47,9 @@ export const COLORS = {
   riverShimmer: '#256685',
   goal: '#14532d',
   goalAlt: '#0f4226',
+  lilypad: '#166534',
+  lilypadAlt: '#14532d',
+  lilypadLeaf: '#22c55e',
   frog: '#4ade80',
   frogDark: '#22c55e',
   car: '#f87171',
@@ -74,34 +62,15 @@ export const COLORS = {
   zoneDivider: 'rgba(74, 222, 128, 0.25)',
 }
 
-export function laneTypeForWorldRow(worldRow: number): LaneType {
-  if (worldRow <= 0) return 'start'
-  const index = (worldRow - 1) % CHUNK_CYCLE
-  if (index < 5) return 'road'
-  if (index === 5) return 'median'
-  if (index < 11) return 'river'
-  return 'safe'
-}
-
-export function isRoadWorldRow(worldRow: number): boolean {
-  return laneTypeForWorldRow(worldRow) === 'road'
-}
-
-export function isRiverWorldRow(worldRow: number): boolean {
-  return laneTypeForWorldRow(worldRow) === 'river'
-}
-
-export function roadLaneIndex(worldRow: number): number {
-  return (worldRow - 1) % CHUNK_CYCLE
-}
-
-export function riverLaneIndex(worldRow: number): number {
-  return (worldRow - 1) % CHUNK_CYCLE - 6
-}
-
-export function difficultyForWorldRow(worldRow: number): number {
-  return 1 + Math.floor(Math.max(0, worldRow) / CHUNK_CYCLE) * 0.08
-}
+export {
+  difficultyForWorldRow,
+  getWorldRowInfo,
+  isLilypadWorldRow,
+  isRoadWorldRow,
+  isRiverWorldRow,
+  laneTypeForWorldRow,
+  type LaneType,
+} from './worldLayout'
 
 /** Canvas y-offset: row 0 is the bottom of the screen. */
 export function rowToCanvasY(row: number): number {
