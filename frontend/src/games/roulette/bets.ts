@@ -19,6 +19,7 @@ import {
   VALID_SPLITS,
   VALID_STREETS,
 } from './grid'
+import { getBoostTadpoleCost } from './boost'
 
 export type BetType =
   | 'straight'
@@ -202,7 +203,19 @@ export interface BetOutcome {
 
 export interface MultiplierBoost {
   pocket: number
+  /** Winnings multiplier when the boosted pocket wins. */
   multiplier: number
+  /** Tadpoles spent on the boost — always equals multiplier. */
+  cost: number
+}
+
+export function createMultiplierBoost(
+  pocket: number,
+  boostAmount: number,
+): MultiplierBoost | null {
+  const cost = getBoostTadpoleCost(boostAmount)
+  if (cost === 0) return null
+  return { pocket, multiplier: cost, cost }
 }
 
 export interface SpinResolution {
@@ -223,7 +236,7 @@ export function resolveSpin(
   spinResult: number,
   boost?: MultiplierBoost | null,
 ): SpinResolution {
-  const multiplierCost = boost?.multiplier ?? 0
+  const multiplierCost = boost?.cost ?? 0
   const boostActive =
     boost != null && spinResult === boost.pocket && boost.multiplier > 1
 

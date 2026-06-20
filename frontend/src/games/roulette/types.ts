@@ -29,6 +29,7 @@ export interface RouletteState {
   betOutcomes: BetOutcome[] | null
   lastSpinNet: number
   lastRoundBets: Bet[]
+  lastRoundBoostAmount: number
   recentSpins: number[]
   message: string | null
   resolutionId: number

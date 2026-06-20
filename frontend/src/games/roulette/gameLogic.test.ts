@@ -5,6 +5,7 @@ import {
   createInitialState,
   rouletteReducer,
   totalStaked,
+  totalWager,
 } from './gameLogic'
 
 describe('rouletteReducer place_bet', () => {
@@ -55,7 +56,7 @@ describe('rouletteReducer spin flow', () => {
 
     state = rouletteReducer(state, { type: 'complete_round' })
     expect(state.phase).toBe('betting')
-    expect(state.pendingBets).toHaveLength(0)
+    expect(state.pendingBets).toHaveLength(2)
     expect(state.recentSpins).toEqual([7])
     expect(state.lastRoundBets).toHaveLength(2)
   })
@@ -78,6 +79,19 @@ describe('rouletteReducer spin flow', () => {
       state = rouletteReducer(state, { type: 'complete_round' })
     }
     expect(state.recentSpins.length).toBeLessThanOrEqual(12)
+  })
+})
+
+describe('totalWager', () => {
+  it('includes table stakes plus boost cost equal to boost amount', () => {
+    let state = createInitialState()
+    state = rouletteReducer(state, {
+      type: 'place_bet',
+      bet: createInsideBet('straight', [7], 10)!,
+    })
+    state = rouletteReducer(state, { type: 'set_boost_amount', amount: 15 })
+    expect(totalStaked(state)).toBe(10)
+    expect(totalWager(state)).toBe(25)
   })
 })
 
@@ -105,19 +119,23 @@ describe('rouletteReducer multiplier', () => {
 })
 
 describe('rouletteReducer rebet', () => {
-  it('restores last round bets', () => {
+  it('restores last round bets and boost amount', () => {
     let state = createInitialState()
+    state = rouletteReducer(state, { type: 'set_boost_amount', amount: 10 })
     state = rouletteReducer(state, {
       type: 'place_bet',
       bet: createInsideBet('straight', [7], MIN_BET)!,
     })
-    state = rouletteReducer(state, { type: 'spin', spinResult: 1 })
+    state = rouletteReducer(state, { type: 'spin', spinResult: 1, boostedPocket: 3 })
     state = rouletteReducer(state, { type: 'complete_round' })
-    expect(state.pendingBets).toHaveLength(0)
+    expect(state.pendingBets).toHaveLength(1)
+    expect(state.boostAmount).toBe(10)
 
+    state = rouletteReducer(state, { type: 'clear_bets' })
+    state = rouletteReducer(state, { type: 'set_boost_amount', amount: 0 })
     state = rouletteReducer(state, { type: 'rebet' })
     expect(state.pendingBets).toHaveLength(1)
-    expect(state.pendingBets[0]!.numbers).toEqual([7])
+    expect(state.boostAmount).toBe(10)
   })
 })
 

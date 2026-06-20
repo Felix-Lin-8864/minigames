@@ -133,7 +133,7 @@ describe('resolveSpin', () => {
       createInsideBet('straight', [7], 5)!,
       createOutsideBet('red', 10),
     ]
-    const resolution = resolveSpin(bets, 7, { pocket: 7, multiplier: 3 })
+    const resolution = resolveSpin(bets, 7, { pocket: 7, multiplier: 3, cost: 3 })
     expect(resolution.outcomes[0]!.payout).toBe(5 * 36 * 3)
     expect(resolution.outcomes[0]!.multiplierApplied).toBe(true)
     expect(resolution.outcomes[1]!.payout).toBe(20 * 3)
@@ -144,7 +144,7 @@ describe('resolveSpin', () => {
 
   it('does not multiply when boosted pocket does not win', () => {
     const bets: Bet[] = [createInsideBet('straight', [7], 5)!]
-    const resolution = resolveSpin(bets, 8, { pocket: 7, multiplier: 5 })
+    const resolution = resolveSpin(bets, 8, { pocket: 7, multiplier: 5, cost: 5 })
     expect(resolution.outcomes[0]!.payout).toBe(0)
     expect(resolution.multiplierHit).toBe(false)
     expect(resolution.net).toBe(-5 - 5)
@@ -155,7 +155,7 @@ describe('resolveSpin', () => {
       createInsideBet('straight', [7], 5)!,
       createInsideBet('straight', [8], 5)!,
     ]
-    const resolution = resolveSpin(bets, 8, { pocket: 8, multiplier: 2 })
+    const resolution = resolveSpin(bets, 8, { pocket: 8, multiplier: 2, cost: 2 })
     expect(resolution.outcomes[0]!.payout).toBe(0)
     expect(resolution.outcomes[1]!.payout).toBe(5 * 36 * 2)
     expect(resolution.outcomes[1]!.multiplierApplied).toBe(true)

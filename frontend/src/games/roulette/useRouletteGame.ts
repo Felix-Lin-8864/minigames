@@ -1,6 +1,7 @@
 import { useCallback, useReducer, useRef } from 'react'
 import { useWallet } from '../../wallet/useWallet'
 import type { Bet } from './bets'
+import { getBoostTadpoleCost } from './boost'
 import { MIN_BET } from './constants'
 import {
   createInitialState,
@@ -49,7 +50,7 @@ export function useRouletteGame() {
 
     const result = spinPocket()
     const boostedPocket =
-      current.boostAmount >= MIN_BET ? pickBoostedPocket() : undefined
+      getBoostTadpoleCost(current.boostAmount) > 0 ? pickBoostedPocket() : undefined
 
     dispatch({ type: 'spin', spinResult: result, boostedPocket })
     return true

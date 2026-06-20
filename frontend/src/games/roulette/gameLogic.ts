@@ -1,4 +1,5 @@
-import { isValidAdjacency, resolveSpin, type Bet } from './bets'
+import { createMultiplierBoost, isValidAdjacency, resolveSpin, type Bet } from './bets'
+import { getBoostTadpoleCost } from './boost'
 import { MIN_BET, RECENT_SPINS_LIMIT } from './constants'
 import type { RouletteAction, RouletteSnapshot, RouletteState } from './types'
 
@@ -11,6 +12,7 @@ export function createInitialState(): RouletteState {
     betOutcomes: null,
     lastSpinNet: 0,
     lastRoundBets: [],
+    lastRoundBoostAmount: 0,
     recentSpins: [],
     message: null,
     resolutionId: 0,
@@ -25,7 +27,7 @@ export function totalStaked(state: RouletteState): number {
 }
 
 export function boostCost(state: RouletteState): number {
-  return state.boostAmount >= MIN_BET ? state.boostAmount : 0
+  return getBoostTadpoleCost(state.boostAmount)
 }
 
 export function totalWager(state: RouletteState): number {
@@ -123,25 +125,29 @@ export function rouletteReducer(
     case 'rebet': {
       if (state.phase !== 'betting') return state
       if (state.lastRoundBets.length === 0) return state
-      return { ...state, pendingBets: cloneBets(state.lastRoundBets) }
+      return {
+        ...state,
+        pendingBets: cloneBets(state.lastRoundBets),
+        boostAmount: state.lastRoundBoostAmount,
+      }
     }
 
     case 'spin': {
       if (state.phase !== 'betting') return state
       if (state.pendingBets.length === 0) return state
 
-      const hasBoost = state.boostAmount >= MIN_BET
-      const boostedPocket = hasBoost ? (action.boostedPocket ?? null) : null
       const boost =
-        boostedPocket != null
-          ? { pocket: boostedPocket, multiplier: state.boostAmount }
+        action.boostedPocket != null
+          ? createMultiplierBoost(action.boostedPocket, state.boostAmount)
           : null
+      const boostedPocket = boost?.pocket ?? null
 
       const resolution = resolveSpin(state.pendingBets, action.spinResult, boost)
       return {
         ...state,
         phase: 'revealing',
         lastRoundBets: cloneBets(state.pendingBets),
+        lastRoundBoostAmount: state.boostAmount,
         spinResult: action.spinResult,
         boostedPocket,
         betOutcomes: resolution.outcomes,
@@ -165,7 +171,8 @@ export function rouletteReducer(
       return {
         ...state,
         phase: 'betting',
-        pendingBets: [],
+        pendingBets: cloneBets(state.lastRoundBets),
+        boostAmount: state.lastRoundBoostAmount,
         spinResult: null,
         betOutcomes: null,
         message: null,
