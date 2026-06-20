@@ -2,9 +2,10 @@ import Grid from '@mui/material/Grid'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { DashboardHero } from '../components/dashboard/DashboardHero'
+import { GameLaunchCard } from '../components/dashboard/GameLaunchCard'
 import { StatCard } from '../components/dashboard/StatCard'
 import { WalletCard } from '../components/dashboard/WalletCard'
-import { miniGames } from '../games/registry'
+import { frogtuneGames, miniGames } from '../games/registry'
 import { useStats } from '../stats/useStats'
 
 export function DashboardPage() {
@@ -27,13 +28,31 @@ export function DashboardPage() {
         </Typography>
       )}
 
-      <Grid container spacing={3}>
-        {miniGames.map((game) => (
-          <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <StatCard game={game} stats={stats[game.id]} />
+      {miniGames.length > 0 && (
+        <Stack spacing={2}>
+          <Typography variant="h6">Mini games</Typography>
+          <Grid container spacing={3}>
+            {miniGames.map((game) => (
+              <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <StatCard game={game} stats={stats[game.id]} />
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        </Stack>
+      )}
+
+      {frogtuneGames.length > 0 && (
+        <Stack spacing={2}>
+          <Typography variant="h6">Frogtune</Typography>
+          <Grid container spacing={3}>
+            {frogtuneGames.map((game) => (
+              <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <GameLaunchCard game={game} />
+              </Grid>
+            ))}
+          </Grid>
+        </Stack>
+      )}
     </Stack>
   )
 }

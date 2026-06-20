@@ -10,13 +10,17 @@ import { tilesForward } from './gameLogic'
 import { useFroggerGame } from './useFroggerGame'
 import { useStats } from '../../stats/useStats'
 import { useCreditWalletOnGameOver } from '../../wallet/useCreditWalletOnGameOver'
+import { TadpoleEarnedSnackbar } from '../../wallet/TadpoleEarnedSnackbar'
 
 export function FroggerGame() {
   const { snapshot, start, restart, move } = useFroggerGame()
   const { stats, updateStats } = useStats()
   const savedScoreRef = useRef(false)
-
-  useCreditWalletOnGameOver('frogger', snapshot.status, snapshot.score)
+  const { earnedAmount, showEarnedNotification, dismissNotification } = useCreditWalletOnGameOver(
+    'frogger',
+    snapshot.status,
+    snapshot.score,
+  )
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -126,6 +130,11 @@ export function FroggerGame() {
           Right
         </Button>
       </Stack>
+      <TadpoleEarnedSnackbar
+        open={showEarnedNotification}
+        amount={earnedAmount ?? 0}
+        onClose={dismissNotification}
+      />
     </Stack>
   )
 }

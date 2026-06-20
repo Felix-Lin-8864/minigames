@@ -9,13 +9,17 @@ import { SnakeCanvas } from './SnakeCanvas'
 import { useSnakeGame } from './useSnakeGame'
 import { useStats } from '../../stats/useStats'
 import { useCreditWalletOnGameOver } from '../../wallet/useCreditWalletOnGameOver'
+import { TadpoleEarnedSnackbar } from '../../wallet/TadpoleEarnedSnackbar'
 
 export function SnakeGame() {
   const { snapshot, start, restart, setDirection } = useSnakeGame()
   const { stats, updateStats } = useStats()
   const savedScoreRef = useRef(false)
-
-  useCreditWalletOnGameOver('snake', snapshot.status, snapshot.score)
+  const { earnedAmount, showEarnedNotification, dismissNotification } = useCreditWalletOnGameOver(
+    'snake',
+    snapshot.status,
+    snapshot.score,
+  )
 
   useEffect(() => {
     if (snapshot.status === 'playing') {
@@ -124,6 +128,11 @@ export function SnakeGame() {
           Right
         </Button>
       </Stack>
+      <TadpoleEarnedSnackbar
+        open={showEarnedNotification}
+        amount={earnedAmount ?? 0}
+        onClose={dismissNotification}
+      />
     </Stack>
   )
 }

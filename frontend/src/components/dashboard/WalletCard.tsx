@@ -78,8 +78,7 @@ export function WalletCard() {
           </Box>
 
           <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Play Snake and Frogger to earn score as tadpoles. Anagrams pays ceiling(score ÷ 400).
-            Save up for Frogtune games — coming soon to the pond.
+            Play Mini Games to earn tadpoles. Test your luck with tadpoles in Frogtune. 
           </Typography>
         </Stack>
       </CardContent>

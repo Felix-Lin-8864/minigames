@@ -3,6 +3,7 @@ import type { ElementType } from 'react'
 import { FrogIcon } from '../components/icons/FrogIcon'
 import { SnakeIcon } from '../components/icons/SnakeIcon'
 import { TwentyOneIcon } from '../components/icons/TwentyOneIcon'
+import { RouletteIcon } from '../components/icons/RouletteIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -53,6 +54,15 @@ export const gameMetadata: GameMetadata[] = [
     icon: TwentyOneIcon as ElementType,
     category: 'frogtune',
     statFields: [{ key: 'handsWon', label: 'Hands Won', format: 'score' }],
+  },
+  {
+    id: 'roulette',
+    name: 'Roulette',
+    description: 'European single-zero roulette — place chips on the table and spin for tadpoles.',
+    route: '/games/roulette',
+    icon: RouletteIcon as ElementType,
+    category: 'frogtune',
+    statFields: [],
   },
 ]
 

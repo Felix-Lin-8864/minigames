@@ -14,6 +14,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useWordDictionary } from '../../dictionary/useWordDictionary'
 import { useStats } from '../../stats/useStats'
 import { useCreditWalletOnGameOver } from '../../wallet/useCreditWalletOnGameOver'
+import { TadpoleEarnedSnackbar } from '../../wallet/TadpoleEarnedSnackbar'
 import {
   LETTER_COUNT_OPTIONS,
   MODE_OPTIONS,
@@ -226,7 +227,11 @@ export function AnagramsGame() {
   const inputRef = useRef<HTMLInputElement>(null)
   const foundWordsListRef = useRef<HTMLDivElement>(null)
 
-  useCreditWalletOnGameOver('anagrams', snapshot.status, snapshot.score)
+  const { earnedAmount, showEarnedNotification, dismissNotification } = useCreditWalletOnGameOver(
+    'anagrams',
+    snapshot.status,
+    snapshot.score,
+  )
 
   useEffect(() => {
     if (snapshot.status === 'playing') {
@@ -505,6 +510,12 @@ export function AnagramsGame() {
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
         Longer words score exponentially more (100 pts for 3 letters)!
       </Typography>
+
+      <TadpoleEarnedSnackbar
+        open={showEarnedNotification}
+        amount={earnedAmount ?? 0}
+        onClose={dismissNotification}
+      />
     </Stack>
   )
 }
