@@ -18,10 +18,14 @@ export function useElementHeight(ref: RefObject<HTMLElement | null>): number | u
   return height
 }
 
-export function useSquareFitSize(ref: RefObject<HTMLElement | null>): number | undefined {
+export function useSquareFitSize(
+  ref: RefObject<HTMLElement | null>,
+  active = true,
+): number | undefined {
   const [size, setSize] = useState<number | undefined>()
 
   useEffect(() => {
+    if (!active) return
     const el = ref.current
     if (!el) return
 
@@ -34,7 +38,7 @@ export function useSquareFitSize(ref: RefObject<HTMLElement | null>): number | u
     const observer = new ResizeObserver(update)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [ref])
+  }, [ref, active])
 
   return size
 }

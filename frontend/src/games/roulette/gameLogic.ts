@@ -93,7 +93,6 @@ export function rouletteReducer(
       if (state.phase !== 'betting') return state
       const amount = Math.floor(action.amount)
       if (!Number.isFinite(amount) || amount < 0) return state
-      if (amount > 0 && amount < MIN_BET) return state
       return { ...state, boostAmount: amount }
     }
 

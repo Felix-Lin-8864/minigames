@@ -111,6 +111,19 @@ describe('rouletteReducer multiplier', () => {
     expect(state.lastSpinNet).toBe(5 * 36 * 5 - 5 - 5)
   })
 
+  it('accepts boost amounts below the table minimum bet', () => {
+    let state = createInitialState()
+    state = rouletteReducer(state, { type: 'set_boost_amount', amount: 2 })
+    state = rouletteReducer(state, {
+      type: 'place_bet',
+      bet: createInsideBet('straight', [7], MIN_BET)!,
+    })
+    state = rouletteReducer(state, { type: 'spin', spinResult: 7, boostedPocket: 7 })
+
+    expect(state.boostedPocket).toBe(7)
+    expect(state.lastSpinNet).toBe(5 * 36 * 2 - MIN_BET - 2)
+  })
+
   it('does not assign boosted pocket during betting', () => {
     let state = createInitialState()
     state = rouletteReducer(state, { type: 'set_boost_amount', amount: 10 })

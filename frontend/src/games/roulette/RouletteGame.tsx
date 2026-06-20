@@ -52,7 +52,7 @@ export function RouletteGame() {
 
   const isRevealing = snapshot.phase === 'revealing'
   const showResults = revealStage === 'results'
-  const showBoostOnTable = showResults && snapshot.boostedPocket != null
+  const showBoostOnTable = isRevealing && snapshot.boostedPocket != null
 
   useEffect(() => {
     if (!isRevealing || snapshot.spinResult === null) {
@@ -102,7 +102,6 @@ export function RouletteGame() {
                   phase={snapshot.phase}
                   spinResult={showResults ? snapshot.spinResult : null}
                   boostedPocket={showBoostOnTable ? snapshot.boostedPocket : null}
-                  multiplier={showBoostOnTable ? snapshot.boostAmount : null}
                   onPlaceBet={placeBet}
                 />
               </Box>

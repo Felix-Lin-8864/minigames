@@ -238,7 +238,7 @@ export function resolveSpin(
 ): SpinResolution {
   const multiplierCost = boost?.cost ?? 0
   const boostActive =
-    boost != null && spinResult === boost.pocket && boost.multiplier > 1
+    boost != null && spinResult === boost.pocket && boost.multiplier > 0
 
   const outcomes: BetOutcome[] = bets.map((bet) => {
     let payout = resolveBet(bet, spinResult)

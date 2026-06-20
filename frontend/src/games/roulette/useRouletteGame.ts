@@ -2,7 +2,6 @@ import { useCallback, useReducer, useRef } from 'react'
 import { useWallet } from '../../wallet/useWallet'
 import type { Bet } from './bets'
 import { getBoostTadpoleCost } from './boost'
-import { MIN_BET } from './constants'
 import {
   createInitialState,
   rouletteReducer,

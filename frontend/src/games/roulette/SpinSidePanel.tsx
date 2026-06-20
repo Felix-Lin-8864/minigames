@@ -41,7 +41,6 @@ function parseBoostInput(input: string): number | null {
   if (trimmed === '' || trimmed === '0') return 0
   const value = Math.floor(Number(trimmed))
   if (!Number.isFinite(value) || value < 0) return null
-  if (value > 0 && value < MIN_BET) return 0
   return value
 }
 
@@ -111,7 +110,7 @@ export function SpinSidePanel({
   const [boostInput, setBoostInput] = useState('0')
   const [wheelSettled, setWheelSettled] = useState(false)
   const wheelAreaRef = useRef<HTMLDivElement>(null)
-  const wheelSize = useSquareFitSize(wheelAreaRef)
+  const wheelSize = useSquareFitSize(wheelAreaRef, revealStage === 'wheel')
 
   const isBetting = snapshot.phase === 'betting'
   const showControls = isBetting && revealStage === 'idle'
@@ -143,8 +142,7 @@ export function SpinSidePanel({
     return () => window.clearTimeout(timer)
   }, [revealStage, snapshot.spinResult])
 
-  const hadBoost =
-    snapshot.boostAmount >= MIN_BET && snapshot.boostedPocket != null
+  const hadBoost = snapshot.boostAmount > 0 && snapshot.boostedPocket != null
   const showWheel = revealStage === 'wheel' && snapshot.spinResult !== null
   const showResults = revealStage === 'results' && snapshot.spinResult !== null
 
@@ -214,13 +212,6 @@ export function SpinSidePanel({
             </Button>
           </Stack>
 
-          {snapshot.boostAmount >= MIN_BET && (
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-              {formatTadpoles(snapshot.boostAmount)} for {snapshot.boostAmount}× on a random
-              pocket (revealed on spin)
-            </Typography>
-          )}
-
           {(snapshot.pendingBets.length > 0 || snapshot.boostCost > 0) && (
             <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
               Total staked: {formatTadpoles(snapshot.totalStaked)}
@@ -238,13 +229,15 @@ export function SpinSidePanel({
           )}
 
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            Boost costs tadpoles equal to the boost amount and applies that same multiplier to a
-            random pocket (revealed on spin). Enter 0 to opt out.
+            Boost costs tadpoles equal to the boost amount (any amount above 0) and applies that
+            same multiplier to a random pocket, shown on the table when you spin. Enter 0 to opt
+            out.
           </Typography>
         </Stack>
       )}
 
       <Box
+        ref={wheelAreaRef}
         sx={{
           flex: 1,
           minHeight: 0,
@@ -254,37 +247,46 @@ export function SpinSidePanel({
           justifyContent: 'center',
         }}
       >
-      {showWheel && (
-        <Stack
-          spacing={1}
-          sx={{
-            width: '100%',
-            height: '100%',
-            minHeight: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Box
-            ref={wheelAreaRef}
+        {revealStage === 'idle' && (
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', px: 2 }}>
+            Wheel spins here when you play
+          </Typography>
+        )}
+
+        {showWheel && (
+          <Stack
+            spacing={1}
             sx={{
-              flex: 1,
               width: '100%',
+              height: '100%',
               minHeight: 0,
-              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            {wheelSize != null && wheelSize > 0 && (
-              <RouletteWheel winningPocket={snapshot.spinResult!} size={wheelSize} />
-            )}
-          </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
-            {wheelSettled ? 'Result locked in…' : 'Spinning…'}
-          </Typography>
-        </Stack>
-      )}
+            <Box
+              sx={{
+                flex: 1,
+                width: '100%',
+                minHeight: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {wheelSize != null && wheelSize > 0 && (
+                <RouletteWheel
+                  key={snapshot.spinResult}
+                  winningPocket={snapshot.spinResult!}
+                  size={wheelSize}
+                />
+              )}
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
+              {wheelSettled ? 'Result locked in…' : 'Spinning…'}
+            </Typography>
+          </Stack>
+        )}
 
       {showResults && (
         <Stack

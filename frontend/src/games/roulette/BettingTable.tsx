@@ -24,7 +24,6 @@ interface BettingTableProps {
   phase: GamePhase
   spinResult: number | null
   boostedPocket: number | null
-  multiplier: number | null
   onPlaceBet: (bet: Bet) => void
 }
 
@@ -69,32 +68,6 @@ function ChipMarker({ amount }: { amount: number }) {
   )
 }
 
-function BoostBadge({ multiplier }: { multiplier: number }) {
-  return (
-    <Box
-      sx={{
-        position: 'absolute',
-        top: 2,
-        right: 2,
-        zIndex: 4,
-        px: 0.5,
-        py: 0.1,
-        borderRadius: 1,
-        bgcolor: 'warning.main',
-        color: 'warning.contrastText',
-        fontSize: '0.6rem',
-        fontWeight: 700,
-        fontFamily: '"Fredoka", sans-serif',
-        lineHeight: 1.2,
-        pointerEvents: 'none',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
-      }}
-    >
-      {multiplier}×
-    </Box>
-  )
-}
-
 function PocketCell({
   number,
   onClick,
@@ -103,7 +76,6 @@ function PocketCell({
   disabled,
   fullHeight,
   boosted,
-  boostMultiplier,
 }: {
   number: number
   onClick: () => void
@@ -112,9 +84,12 @@ function PocketCell({
   disabled: boolean
   fullHeight?: boolean
   boosted?: boolean
-  boostMultiplier?: number
 }) {
   const data = NUMBER_DATA[number]!
+  const pocketSx = boosted
+    ? { bgcolor: '#fbbf24', color: '#1a120c' }
+    : pocketColorSx(data.color)
+
   return (
     <Box
       onClick={disabled ? undefined : onClick}
@@ -127,18 +102,17 @@ function PocketCell({
         justifyContent: 'center',
         cursor: disabled ? 'default' : 'pointer',
         border: '1px solid rgba(255,255,255,0.15)',
-        outline: highlighted ? '2px solid #fbbf24' : boosted ? '2px solid #f59e0b' : 'none',
+        outline: highlighted ? '2px solid #fbbf24' : 'none',
         outlineOffset: -2,
         fontFamily: '"Fredoka", sans-serif',
         fontWeight: 600,
         fontSize: '0.85rem',
         userSelect: 'none',
         '&:hover': disabled ? {} : { filter: 'brightness(1.15)' },
-        ...pocketColorSx(data.color),
+        ...pocketSx,
       }}
     >
       {number}
-      {boosted && boostMultiplier != null && <BoostBadge multiplier={boostMultiplier} />}
       <ChipMarker amount={chipAmount} />
     </Box>
   )
@@ -219,7 +193,6 @@ export function BettingTable({
   phase,
   spinResult,
   boostedPocket,
-  multiplier,
   onPlaceBet,
 }: BettingTableProps) {
   const disabled = phase === 'revealing'
@@ -264,7 +237,6 @@ export function BettingTable({
               disabled={disabled}
               fullHeight
               boosted={boostedPocket === 0}
-              boostMultiplier={multiplier ?? undefined}
             />
           </Box>
 
@@ -287,7 +259,6 @@ export function BettingTable({
                             highlighted={spinResult === n}
                             disabled={disabled}
                             boosted={boostedPocket === n}
-                            boostMultiplier={multiplier ?? undefined}
                           />
                         ))}
                       </Box>

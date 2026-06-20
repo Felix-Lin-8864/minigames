@@ -47,10 +47,16 @@ export function RouletteWheel({ winningPocket, size }: RouletteWheelProps) {
 
   useEffect(() => {
     setRotation(0)
-    const raf = requestAnimationFrame(() => {
-      setRotation(landingRotation(winningPocket))
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setRotation(landingRotation(winningPocket))
+      })
     })
-    return () => cancelAnimationFrame(raf)
+    return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+    }
   }, [winningPocket])
 
   const pointerSize = size != null ? Math.max(10, size * 0.075) : undefined
