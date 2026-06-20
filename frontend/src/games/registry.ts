@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 import { gameMetadata, type GameMetadata } from './metadata'
-import { SnakePage } from '../pages/games/SnakePage'
+import { FroggerPage } from '../pages/games/FroggerPage'
 import { MemoryPage } from '../pages/games/MemoryPage'
 import { ReactionPage } from '../pages/games/ReactionPage'
 
@@ -9,7 +9,7 @@ export interface GameDefinition extends GameMetadata {
 }
 
 const components: Record<string, ComponentType> = {
-  snake: SnakePage,
+  frogger: FroggerPage,
   memory: MemoryPage,
   reaction: ReactionPage,
 }

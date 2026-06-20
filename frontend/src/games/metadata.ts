@@ -1,7 +1,7 @@
-import SportsEsportsIcon from '@mui/icons-material/SportsEsports'
 import PsychologyIcon from '@mui/icons-material/Psychology'
 import BoltIcon from '@mui/icons-material/Bolt'
-import type { SvgIconComponent } from '@mui/icons-material'
+import type { ElementType } from 'react'
+import { FrogIcon } from '../components/icons/FrogIcon'
 import type { StatField } from '../stats/types'
 
 export interface GameMetadata {
@@ -9,18 +9,18 @@ export interface GameMetadata {
   name: string
   description: string
   route: string
-  icon: SvgIconComponent
+  icon: ElementType
   statFields: StatField[]
 }
 
 export const gameMetadata: GameMetadata[] = [
   {
-    id: 'snake',
-    name: 'Snake',
-    description: 'Classic snake game — grow longer by eating food without hitting walls or yourself.',
-    route: '/games/snake',
-    icon: SportsEsportsIcon,
-    statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
+    id: 'frogger',
+    name: 'Frogger',
+    description: 'Hop endlessly through traffic and rivers — how far can you go?',
+    route: '/games/frogger',
+    icon: FrogIcon as ElementType,
+    statFields: [{ key: 'highScore', label: 'Best Distance', format: 'score' }],
   },
   {
     id: 'memory',
