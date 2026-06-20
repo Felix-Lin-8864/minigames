@@ -1,45 +1,126 @@
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
+import ListSubheader from '@mui/material/ListSubheader'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import MenuIcon from '@mui/icons-material/Menu'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import { FrogIcon } from './icons/FrogIcon'
-import { gameMetadata } from '../games/metadata'
+import { frogtuneGameMetadata, miniGameMetadata } from '../games/metadata'
 import { APP_NAME } from '../theme/branding'
+import { WalletBalance } from './wallet/WalletBalance'
+
+function useNavMenu() {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  function openMenu(event: MouseEvent<HTMLElement>) {
+    setAnchorEl(event.currentTarget)
+  }
+
+  function closeMenu() {
+    setAnchorEl(null)
+  }
+
+  return { anchorEl, open, openMenu, closeMenu }
+}
 
 export function TopAppBar() {
   const location = useLocation()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const miniGamesMenu = useNavMenu()
+  const frogtuneMenu = useNavMenu()
 
   function isActive(route: string) {
-    if (route === '/') return location.pathname === '/'
     return location.pathname.startsWith(route)
   }
 
-  const navLinks = (
+  const miniGamesActive = miniGameMetadata.some((game) => isActive(game.route))
+  const frogtuneActive = frogtuneGameMetadata.some((game) => isActive(game.route))
+
+  const desktopMenus = (
     <>
-      {gameMetadata.map((game) => (
-        <Button
-          key={game.id}
-          component={RouterLink}
-          to={game.route}
-          color={isActive(game.route) ? 'primary' : 'inherit'}
-          variant={isActive(game.route) ? 'contained' : 'text'}
-          size="small"
-          sx={{ display: { xs: 'none', md: 'inline-flex' } }}
-        >
-          {game.name}
-        </Button>
-      ))}
+      <Button
+        color={miniGamesActive ? 'primary' : 'inherit'}
+        variant={miniGamesActive ? 'contained' : 'text'}
+        size="small"
+        endIcon={<KeyboardArrowDownIcon />}
+        onClick={miniGamesMenu.openMenu}
+        aria-controls={miniGamesMenu.open ? 'mini-games-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={miniGamesMenu.open ? 'true' : undefined}
+      >
+        Mini Games
+      </Button>
+      <Menu
+        id="mini-games-menu"
+        anchorEl={miniGamesMenu.anchorEl}
+        open={miniGamesMenu.open}
+        onClose={miniGamesMenu.closeMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        {miniGameMetadata.map((game) => (
+          <MenuItem
+            key={game.id}
+            component={RouterLink}
+            to={game.route}
+            selected={isActive(game.route)}
+            onClick={miniGamesMenu.closeMenu}
+          >
+            {game.name}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Button
+        color={frogtuneActive ? 'primary' : 'inherit'}
+        variant={frogtuneActive ? 'contained' : 'text'}
+        size="small"
+        endIcon={<KeyboardArrowDownIcon />}
+        onClick={frogtuneMenu.openMenu}
+        aria-controls={frogtuneMenu.open ? 'frogtune-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={frogtuneMenu.open ? 'true' : undefined}
+      >
+        Frogtune
+      </Button>
+      <Menu
+        id="frogtune-menu"
+        anchorEl={frogtuneMenu.anchorEl}
+        open={frogtuneMenu.open}
+        onClose={frogtuneMenu.closeMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        {frogtuneGameMetadata.length > 0 ? (
+          frogtuneGameMetadata.map((game) => (
+            <MenuItem
+              key={game.id}
+              component={RouterLink}
+              to={game.route}
+              selected={isActive(game.route)}
+              onClick={frogtuneMenu.closeMenu}
+            >
+              {game.name}
+            </MenuItem>
+          ))
+        ) : (
+          <MenuItem disabled>Coming soon</MenuItem>
+        )}
+      </Menu>
     </>
   )
 
@@ -82,8 +163,13 @@ export function TopAppBar() {
             {APP_NAME}
           </Typography>
 
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.5, ml: 'auto' }}>
-            {navLinks}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.5, ml: 'auto', alignItems: 'center' }}>
+            {desktopMenus}
+            <WalletBalance />
+          </Box>
+
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto' }}>
+            <WalletBalance />
           </Box>
         </Toolbar>
       </AppBar>
@@ -110,7 +196,9 @@ export function TopAppBar() {
             >
               <ListItemText primary="Pond Dashboard" />
             </ListItemButton>
-            {gameMetadata.map((game) => (
+
+            <ListSubheader>Mini Games</ListSubheader>
+            {miniGameMetadata.map((game) => (
               <ListItemButton
                 key={game.id}
                 component={RouterLink}
@@ -121,6 +209,26 @@ export function TopAppBar() {
                 <ListItemText primary={game.name} />
               </ListItemButton>
             ))}
+
+            <Divider sx={{ my: 1 }} />
+            <ListSubheader>Frogtune</ListSubheader>
+            {frogtuneGameMetadata.length > 0 ? (
+              frogtuneGameMetadata.map((game) => (
+                <ListItemButton
+                  key={game.id}
+                  component={RouterLink}
+                  to={game.route}
+                  selected={isActive(game.route)}
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  <ListItemText primary={game.name} />
+                </ListItemButton>
+              ))
+            ) : (
+              <ListItemButton disabled>
+                <ListItemText primary="Coming soon" />
+              </ListItemButton>
+            )}
           </List>
         </Box>
       </Drawer>

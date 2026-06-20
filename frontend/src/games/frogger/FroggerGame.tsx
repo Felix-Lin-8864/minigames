@@ -9,11 +9,14 @@ import { FroggerCanvas } from './FroggerCanvas'
 import { tilesForward } from './gameLogic'
 import { useFroggerGame } from './useFroggerGame'
 import { useStats } from '../../stats/useStats'
+import { useCreditWalletOnGameOver } from '../../wallet/useCreditWalletOnGameOver'
 
 export function FroggerGame() {
   const { snapshot, start, restart, move } = useFroggerGame()
   const { stats, updateStats } = useStats()
   const savedScoreRef = useRef(false)
+
+  useCreditWalletOnGameOver('frogger', snapshot.status, snapshot.score)
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

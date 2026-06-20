@@ -6,15 +6,18 @@ import App from './App.tsx'
 import { theme } from './theme/theme'
 import { WordDictionaryProvider } from './dictionary/WordDictionaryProvider'
 import { StatsProvider } from './stats/StatsProvider'
+import { WalletProvider } from './wallet/WalletProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <WordDictionaryProvider>
-        <StatsProvider>
-          <App />
-        </StatsProvider>
+        <WalletProvider>
+          <StatsProvider>
+            <App />
+          </StatsProvider>
+        </WalletProvider>
       </WordDictionaryProvider>
     </ThemeProvider>
   </StrictMode>,

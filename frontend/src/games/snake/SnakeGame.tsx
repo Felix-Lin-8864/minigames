@@ -8,11 +8,14 @@ import { Link as RouterLink } from 'react-router-dom'
 import { SnakeCanvas } from './SnakeCanvas'
 import { useSnakeGame } from './useSnakeGame'
 import { useStats } from '../../stats/useStats'
+import { useCreditWalletOnGameOver } from '../../wallet/useCreditWalletOnGameOver'
 
 export function SnakeGame() {
   const { snapshot, start, restart, setDirection } = useSnakeGame()
   const { stats, updateStats } = useStats()
   const savedScoreRef = useRef(false)
+
+  useCreditWalletOnGameOver('snake', snapshot.status, snapshot.score)
 
   useEffect(() => {
     if (snapshot.status === 'playing') {

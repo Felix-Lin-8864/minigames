@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useWordDictionary } from '../../dictionary/useWordDictionary'
 import { useStats } from '../../stats/useStats'
+import { useCreditWalletOnGameOver } from '../../wallet/useCreditWalletOnGameOver'
 import {
   LETTER_COUNT_OPTIONS,
   MODE_OPTIONS,
@@ -224,6 +225,8 @@ export function AnagramsGame() {
   const savedScoreRef = useRef(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const foundWordsListRef = useRef<HTMLDivElement>(null)
+
+  useCreditWalletOnGameOver('anagrams', snapshot.status, snapshot.score)
 
   useEffect(() => {
     if (snapshot.status === 'playing') {
