@@ -11,6 +11,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { useWordDictionary } from '../../dictionary/useWordDictionary'
 import { useStats } from '../../stats/useStats'
 import {
   LETTER_COUNT_OPTIONS,
@@ -18,7 +19,7 @@ import {
   TIME_LIMIT_OPTIONS,
   VALIDATION_MESSAGES,
 } from './constants'
-import { formatTimeRemaining } from './gameLogic'
+import { formatTimeRemaining, findAllValidWords } from './gameLogic'
 import type { AnagramsConfig } from './types'
 import { useAnagramsGame } from './useAnagramsGame'
 
@@ -216,8 +217,10 @@ export function AnagramsGame() {
     submitWord,
     dictionaryReady,
   } = useAnagramsGame()
+  const { dictionary } = useWordDictionary()
   const { stats, updateStats } = useStats()
   const [input, setInput] = useState('')
+  const [revealedWords, setRevealedWords] = useState<string[] | null>(null)
   const savedScoreRef = useRef(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const foundWordsListRef = useRef<HTMLDivElement>(null)
@@ -243,6 +246,12 @@ export function AnagramsGame() {
   }, [snapshot.status, snapshot.score, stats.anagrams, updateStats])
 
   useEffect(() => {
+    if (snapshot.status !== 'gameover' || snapshot.config.mode === 'shuffler') {
+      setRevealedWords(null)
+    }
+  }, [snapshot.status, snapshot.config.mode])
+
+  useEffect(() => {
     const list = foundWordsListRef.current
     if (!list || snapshot.foundWords.length === 0) return
 
@@ -250,6 +259,17 @@ export function AnagramsGame() {
       list.scrollTop = list.scrollHeight
     })
   }, [snapshot.foundWords.length])
+
+  function handleReveal() {
+    if (!dictionary) return
+
+    if (revealedWords) {
+      setRevealedWords(null)
+      return
+    }
+
+    setRevealedWords(findAllValidWords(snapshot.letters, snapshot.config.mode, dictionary))
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -263,12 +283,17 @@ export function AnagramsGame() {
   const isPlaying = snapshot.status === 'playing'
   const isIdle = snapshot.status === 'idle'
   const isGameOver = snapshot.status === 'gameover'
+  const canReveal = snapshot.config.mode !== 'shuffler'
 
   const feedbackMessage =
     snapshot.lastMessage &&
     (snapshot.lastMessageType === 'error'
       ? VALIDATION_MESSAGES[snapshot.lastMessage] ?? snapshot.lastMessage
       : snapshot.lastMessage)
+
+  const foundWordSet = new Set(snapshot.foundWords.map((entry) => entry.word))
+  const revealedFoundCount =
+    revealedWords?.filter((word) => foundWordSet.has(word)).length ?? 0
 
   return (
     <Stack spacing={3} sx={{ alignItems: 'center', width: '100%', maxWidth: 560 }}>
@@ -411,6 +436,38 @@ export function AnagramsGame() {
                 </Box>
               </Box>
             )}
+            {revealedWords && canReveal && (
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  All valid words — {revealedFoundCount}/{revealedWords.length} found
+                </Typography>
+                <Box sx={{ ...foundWordsListSx, maxHeight: 240 }}>
+                  {revealedWords.map((word) => (
+                    <Box
+                      key={word}
+                      sx={{
+                        px: 1.5,
+                        py: 0.75,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        '&:last-child': { borderBottom: 'none' },
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: '"Fredoka", sans-serif',
+                          letterSpacing: '0.04em',
+                          color: foundWordSet.has(word) ? 'primary.main' : 'text.primary',
+                        }}
+                      >
+                        {word}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Stack>
         )}
       </Paper>
@@ -426,9 +483,16 @@ export function AnagramsGame() {
           </Button>
         )}
         {isGameOver && (
-          <Button variant="contained" onClick={restart}>
-            Play again
-          </Button>
+          <>
+            <Button variant="contained" onClick={restart}>
+              Play again
+            </Button>
+            {canReveal && (
+              <Button variant="outlined" onClick={handleReveal} disabled={!dictionary}>
+                {revealedWords ? 'Hide' : 'Reveal'}
+              </Button>
+            )}
+          </>
         )}
         <Button component={RouterLink} to="/" variant="outlined" color="inherit">
           Back to the pond
@@ -436,9 +500,7 @@ export function AnagramsGame() {
       </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-        Form words from the tiles — 3+ letters, dictionary only.
-        <br />
-        Longer words score exponentially more (100 pts for 3 letters).
+        Longer words score exponentially more (100 pts for 3 letters)!
       </Typography>
     </Stack>
   )

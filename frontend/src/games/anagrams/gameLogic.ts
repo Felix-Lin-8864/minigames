@@ -79,6 +79,35 @@ export function validateWord(
   return { valid: true, word, points: scoreWord(word.length) }
 }
 
+export function findAllValidWords(
+  letters: readonly string[],
+  mode: AnagramsMode,
+  dictionary: WordDictionary,
+): string[] {
+  const allowRepetition = allowsLetterRepetition(mode)
+  const maxLength = allowRepetition ? Number.POSITIVE_INFINITY : letters.length
+  const validWords: string[] = []
+
+  for (const word of dictionary) {
+    if (word.length < MIN_WORD_LENGTH || word.length > maxLength) {
+      continue
+    }
+
+    if (canFormWord(word, letters, allowRepetition)) {
+      validWords.push(word)
+    }
+  }
+
+  validWords.sort((left, right) => {
+    if (left.length !== right.length) {
+      return right.length - left.length
+    }
+    return left.localeCompare(right)
+  })
+
+  return validWords
+}
+
 export function createInitialState(): AnagramsState {
   return {
     status: 'idle',
