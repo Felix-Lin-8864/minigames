@@ -2,6 +2,7 @@ import PsychologyIcon from '@mui/icons-material/Psychology'
 import BoltIcon from '@mui/icons-material/Bolt'
 import type { ElementType } from 'react'
 import { FrogIcon } from '../components/icons/FrogIcon'
+import { SnakeIcon } from '../components/icons/SnakeIcon'
 import type { StatField } from '../stats/types'
 
 export interface GameMetadata {
@@ -14,6 +15,14 @@ export interface GameMetadata {
 }
 
 export const gameMetadata: GameMetadata[] = [
+  {
+    id: 'snake',
+    name: 'Snake',
+    description: 'Slither around the pond, eat dots, and grow without crashing.',
+    route: '/games/snake',
+    icon: SnakeIcon as ElementType,
+    statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
+  },
   {
     id: 'frogger',
     name: 'Frogger',
