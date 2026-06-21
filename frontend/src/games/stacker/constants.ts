@@ -3,8 +3,10 @@ export const LAYER_HEIGHT = 28
 export const BASE_LAYER_WIDTH = PLAY_WIDTH * 0.75 * 0.7
 export const BASE_SPEED = 0.28
 export const GRID_CELL_SIZE = 20
-export const SPEED_STEP_LAYERS = 5
-export const SPEED_MULTIPLIER = 1.05
+export const SPEED_STEP_LAYERS = 3
+export const BASE_SPEED_MULTIPLIER = 1
+export const LAYER_SPEED_MULTIPLIER_INCREMENT = 0.05
+export const BOUNCE_SPEED_MULTIPLIER_INCREMENT = 0.01
 export const MIN_LAYER_WIDTH = 4
 export const VISIBLE_HEIGHT = 420
 export const ROWS_ABOVE_ACTIVE = 4
@@ -29,9 +31,16 @@ export const COLORS = {
   text: '#ecfdf5',
 }
 
-export function speedForSuccessfulLayers(successfulLayers: number, baseSpeed = BASE_SPEED): number {
-  const steps = Math.floor(successfulLayers / SPEED_STEP_LAYERS)
-  return baseSpeed * Math.pow(SPEED_MULTIPLIER, steps)
+export function layerSpeedMultiplierBonus(successfulLayers: number): number {
+  return Math.floor(successfulLayers / SPEED_STEP_LAYERS) * LAYER_SPEED_MULTIPLIER_INCREMENT
+}
+
+export function speedMultiplierForSuccessfulLayers(successfulLayers: number): number {
+  return BASE_SPEED_MULTIPLIER + layerSpeedMultiplierBonus(successfulLayers)
+}
+
+export function movementSpeed(speedMultiplier: number): number {
+  return BASE_SPEED * speedMultiplier
 }
 
 export function activeLayerBounds(width: number): { min: number; max: number } {
@@ -55,4 +64,8 @@ export function stackLayerScreenY(layerIndex: number, layerCount: number): numbe
 export function activeLayerScreenY(layerCount: number): number {
   const scrollOffset = scrollOffsetForLayerCount(layerCount)
   return CANVAS_HEIGHT - (layerCount + 1 + GAP_ROWS_ABOVE_STACK) * LAYER_HEIGHT + scrollOffset
+}
+
+export function formatGameSpeed(speedMultiplier: number): string {
+  return `${speedMultiplier.toFixed(2)}×`
 }

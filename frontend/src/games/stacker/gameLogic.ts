@@ -1,12 +1,15 @@
 import {
   BASE_LAYER_WIDTH,
-  BASE_SPEED,
+  BASE_SPEED_MULTIPLIER,
+  BOUNCE_SPEED_MULTIPLIER_INCREMENT,
+  LAYER_SPEED_MULTIPLIER_INCREMENT,
   MIN_LAYER_WIDTH,
   PERFECT_FLASH_DURATION_MS,
+  SPEED_STEP_LAYERS,
   TRIM_FALL_DURATION_MS,
   activeLayerBounds,
+  movementSpeed,
   scrollOffsetForLayerCount,
-  speedForSuccessfulLayers,
 } from './constants'
 import type {
   Layer,
@@ -98,12 +101,16 @@ export function dropLayer(
   const newLayers = [...state.layers, lockedLayer]
   const successfulLayers = newLayers.length - 1
   const points = calculatePoints(overlapWidth, activeLayer.width)
+  const layerSpeedIncrease =
+    successfulLayers > 0 && successfulLayers % SPEED_STEP_LAYERS === 0
+      ? LAYER_SPEED_MULTIPLIER_INCREMENT
+      : 0
 
   return {
     newState: {
       layers: newLayers,
       currentWidth: overlapWidth,
-      speed: speedForSuccessfulLayers(successfulLayers),
+      speedMultiplier: state.speedMultiplier + layerSpeedIncrease,
       score: state.score + points,
       isGameOver: false,
     },
@@ -118,12 +125,13 @@ export function createInitialState(): StackerState {
     status: 'idle',
     layers: [baseLayer],
     currentWidth: BASE_LAYER_WIDTH,
-    speed: BASE_SPEED,
+    speedMultiplier: BASE_SPEED_MULTIPLIER,
     score: 0,
     isGameOver: false,
     activeXOffset: 0,
     activeDirection: 1,
     successfulLayers: 0,
+    hasBouncedThisLayer: false,
     lastDrop: null,
     trimAnimation: null,
     perfectFlash: null,
@@ -134,7 +142,7 @@ function toCoreState(state: StackerState): StackerCoreState {
   return {
     layers: state.layers,
     currentWidth: state.currentWidth,
-    speed: state.speed,
+    speedMultiplier: state.speedMultiplier,
     score: state.score,
     isGameOver: state.isGameOver,
   }
@@ -166,18 +174,34 @@ function tickMovement(state: StackerState, delta: number): StackerState {
   if (state.status !== 'playing' || state.isGameOver) return state
 
   const bounds = activeLayerBounds(state.currentWidth)
-  let nextOffset = state.activeXOffset + state.activeDirection * state.speed * delta
+  let nextOffset =
+    state.activeXOffset + state.activeDirection * movementSpeed(state.speedMultiplier) * delta
   let nextDirection = state.activeDirection
+  let bounced = false
 
   if (nextOffset >= bounds.max) {
     nextOffset = bounds.max
+    if (state.activeDirection === 1) bounced = true
     nextDirection = -1
   } else if (nextOffset <= bounds.min) {
     nextOffset = bounds.min
+    if (state.activeDirection === -1) bounced = true
     nextDirection = 1
   }
 
-  if (nextOffset === state.activeXOffset && nextDirection === state.activeDirection) {
+  const nextSpeedMultiplier = bounced
+    ? state.hasBouncedThisLayer
+      ? state.speedMultiplier + BOUNCE_SPEED_MULTIPLIER_INCREMENT
+      : state.speedMultiplier
+    : state.speedMultiplier
+  const nextHasBouncedThisLayer = bounced ? true : state.hasBouncedThisLayer
+
+  if (
+    nextOffset === state.activeXOffset &&
+    nextDirection === state.activeDirection &&
+    nextSpeedMultiplier === state.speedMultiplier &&
+    nextHasBouncedThisLayer === state.hasBouncedThisLayer
+  ) {
     return state
   }
 
@@ -185,6 +209,8 @@ function tickMovement(state: StackerState, delta: number): StackerState {
     ...state,
     activeXOffset: nextOffset,
     activeDirection: nextDirection,
+    speedMultiplier: nextSpeedMultiplier,
+    hasBouncedThisLayer: nextHasBouncedThisLayer,
   }
 }
 
@@ -221,6 +247,7 @@ function handleDrop(state: StackerState): StackerState {
     ...state,
     ...newState,
     successfulLayers,
+    hasBouncedThisLayer: false,
     activeXOffset: Math.max(bounds.min, Math.min(bounds.max, state.activeXOffset)),
     activeDirection: state.activeDirection,
     lastDrop: {
@@ -258,7 +285,7 @@ export function toSnapshot(state: StackerState): StackerSnapshot {
     status: state.isGameOver ? 'gameover' : state.status,
     layers: state.layers,
     currentWidth: state.currentWidth,
-    speed: state.speed,
+    speedMultiplier: state.speedMultiplier,
     score: state.score,
     activeXOffset: state.activeXOffset,
     activeDirection: state.activeDirection,

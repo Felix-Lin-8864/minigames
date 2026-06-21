@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BASE_SPEED, MIN_LAYER_WIDTH, LAYER_HEIGHT, ROWS_ABOVE_ACTIVE, activeLayerScreenY, speedForSuccessfulLayers, stackLayerScreenY, scrollOffsetForLayerCount } from './constants'
+import { BASE_SPEED_MULTIPLIER, MIN_LAYER_WIDTH, LAYER_HEIGHT, ROWS_ABOVE_ACTIVE, activeLayerBounds, activeLayerScreenY, speedMultiplierForSuccessfulLayers, stackLayerScreenY, scrollOffsetForLayerCount } from './constants'
 import {
   calculatePoints,
   computeOverlapWidth,
@@ -14,7 +14,7 @@ function coreState(overrides: Partial<StackerCoreState> = {}): StackerCoreState 
   return {
     layers: [{ width: 300, xOffset: 0 }],
     currentWidth: 300,
-    speed: BASE_SPEED,
+    speedMultiplier: BASE_SPEED_MULTIPLIER,
     score: 0,
     isGameOver: false,
     ...overrides,
@@ -44,14 +44,14 @@ describe('calculatePoints', () => {
   })
 })
 
-describe('speedForSuccessfulLayers', () => {
-  it('increases by 5% every 5 layers with no cap', () => {
-    expect(speedForSuccessfulLayers(0)).toBeCloseTo(BASE_SPEED)
-    expect(speedForSuccessfulLayers(4)).toBeCloseTo(BASE_SPEED)
-    expect(speedForSuccessfulLayers(5)).toBeCloseTo(BASE_SPEED * 1.05)
-    expect(speedForSuccessfulLayers(10)).toBeCloseTo(BASE_SPEED * 1.05 ** 2)
-    expect(speedForSuccessfulLayers(25)).toBeCloseTo(BASE_SPEED * 1.05 ** 5)
-    expect(speedForSuccessfulLayers(100)).toBeCloseTo(BASE_SPEED * 1.05 ** 20)
+describe('speedMultiplierForSuccessfulLayers', () => {
+  it('increases multiplier by 0.05 every 3 layers with no cap', () => {
+    expect(speedMultiplierForSuccessfulLayers(0)).toBeCloseTo(1)
+    expect(speedMultiplierForSuccessfulLayers(2)).toBeCloseTo(1)
+    expect(speedMultiplierForSuccessfulLayers(3)).toBeCloseTo(1.05)
+    expect(speedMultiplierForSuccessfulLayers(6)).toBeCloseTo(1.1)
+    expect(speedMultiplierForSuccessfulLayers(30)).toBeCloseTo(1.5)
+    expect(speedMultiplierForSuccessfulLayers(100)).toBeCloseTo(2.65)
   })
 })
 
@@ -137,15 +137,15 @@ describe('dropLayer', () => {
     expect(newState.layers[1].xOffset).toBe(75)
   })
 
-  it('updates speed after every 5 successful layers', () => {
+  it('updates speed multiplier by 0.05 every 3 successful layers', () => {
     let state = coreState()
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
       const active: Layer = { width: state.currentWidth, xOffset: 0 }
       const result = dropLayer(state, active)
       state = result.newState
     }
-    expect(state.speed).toBeCloseTo(BASE_SPEED * 1.05)
-    expect(state.score).toBe(25)
+    expect(state.speedMultiplier).toBeCloseTo(1.05)
+    expect(state.score).toBe(15)
   })
 })
 
@@ -175,6 +175,23 @@ describe('stackerReducer', () => {
     const state = stackerReducer(createInitialState(), { type: 'start' })
     expect(state.status).toBe('playing')
     expect(state.layers).toHaveLength(1)
+  })
+
+  it('does not increase speed multiplier on the first wall bounce for a layer', () => {
+    let state = stackerReducer(createInitialState(), { type: 'start' })
+    const bounds = activeLayerBounds(state.currentWidth)
+    state = { ...state, activeXOffset: bounds.max - 0.001, activeDirection: 1 }
+    state = stackerReducer(state, { type: 'tick', delta: 10 })
+    expect(state.speedMultiplier).toBeCloseTo(1)
+    expect(state.hasBouncedThisLayer).toBe(true)
+  })
+
+  it('increases speed multiplier by 0.01 on subsequent wall bounces', () => {
+    let state = stackerReducer(createInitialState(), { type: 'start' })
+    const bounds = activeLayerBounds(state.currentWidth)
+    state = { ...state, activeXOffset: bounds.max - 0.001, activeDirection: 1, hasBouncedThisLayer: true }
+    state = stackerReducer(state, { type: 'tick', delta: 10 })
+    expect(state.speedMultiplier).toBeCloseTo(1.01)
   })
 
   it('ends game on missed drop', () => {

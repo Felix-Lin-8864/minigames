@@ -9,6 +9,7 @@ import {
   PLAY_WIDTH,
   TRIM_FALL_DURATION_MS,
   activeLayerScreenY,
+  formatGameSpeed,
   stackLayerScreenY,
 } from './constants'
 import type { Layer, StackerSnapshot } from './types'
@@ -123,6 +124,17 @@ function drawGrid(ctx: CanvasRenderingContext2D) {
   }
 }
 
+function drawSpeedLabel(ctx: CanvasRenderingContext2D, speedMultiplier: number) {
+  const label = formatGameSpeed(speedMultiplier)
+  ctx.save()
+  ctx.font = '600 13px "Fredoka", sans-serif'
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'top'
+  ctx.fillStyle = 'rgba(236, 253, 245, 0.85)'
+  ctx.fillText(`Speed ${label}`, PLAY_WIDTH - 10, 10)
+  ctx.restore()
+}
+
 export function StackerCanvas({ snapshot, onDrop }: StackerCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -196,6 +208,8 @@ export function StackerCanvas({ snapshot, onDrop }: StackerCanvasProps) {
       ctx.fillText('Game Over', centerX, CANVAS_HEIGHT / 2 - 12)
       ctx.restore()
     }
+
+    drawSpeedLabel(ctx, snapshot.speedMultiplier)
   }, [snapshot])
 
   return (

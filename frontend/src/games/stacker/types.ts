@@ -8,7 +8,7 @@ export interface Layer {
 export interface StackerCoreState {
   layers: Layer[]
   currentWidth: number
-  speed: number
+  speedMultiplier: number
   score: number
   isGameOver: boolean
 }
@@ -40,6 +40,7 @@ export interface StackerState extends StackerCoreState {
   activeXOffset: number
   activeDirection: 1 | -1
   successfulLayers: number
+  hasBouncedThisLayer: boolean
   lastDrop: LastDropResult | null
   trimAnimation: TrimAnimation | null
   perfectFlash: PerfectFlash | null
@@ -55,7 +56,7 @@ export interface StackerSnapshot {
   status: GameStatus
   layers: Layer[]
   currentWidth: number
-  speed: number
+  speedMultiplier: number
   score: number
   activeXOffset: number
   activeDirection: 1 | -1
