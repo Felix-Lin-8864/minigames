@@ -18,7 +18,7 @@ export function StackerGame() {
   const { earnedAmount, showEarnedNotification, dismissNotification } = useCreditWalletOnGameOver(
     'stacker',
     snapshot.status,
-    snapshot.score,
+    snapshot.status === 'gameover' ? snapshot.score : 0,
   )
 
   useEffect(() => {

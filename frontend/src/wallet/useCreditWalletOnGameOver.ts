@@ -10,23 +10,31 @@ export function useCreditWalletOnGameOver(
 ) {
   const { creditTadpolesForGame } = useWallet()
   const creditedRef = useRef(false)
+  const previousStatusRef = useRef(status)
+  const scoreRef = useRef(score)
   const [earnedAmount, setEarnedAmount] = useState<number | null>(null)
 
+  scoreRef.current = score
+
   useEffect(() => {
+    const previousStatus = previousStatusRef.current
+    previousStatusRef.current = status
+
     if (status === 'playing' || status === 'idle') {
       creditedRef.current = false
       setEarnedAmount(null)
+      return
     }
-  }, [status])
 
-  useEffect(() => {
-    if (status !== 'gameover' || creditedRef.current) return
+    if (status !== 'gameover' || previousStatus === 'gameover' || creditedRef.current) {
+      return
+    }
 
     creditedRef.current = true
-    void creditTadpolesForGame(gameId, score, context).then((earned) => {
+    void creditTadpolesForGame(gameId, scoreRef.current, context).then((earned) => {
       setEarnedAmount(earned)
     })
-  }, [status, score, gameId, context, creditTadpolesForGame])
+  }, [status, gameId, context, creditTadpolesForGame])
 
   const dismissNotification = useCallback(() => {
     setEarnedAmount(null)
