@@ -1,19 +1,40 @@
-export const TADPOLE_EARNING_GAMES = ['snake', 'frogger', 'anagrams'] as const
+import type { AnagramsMode } from '../games/anagrams/types'
+
+export const TADPOLE_EARNING_GAMES = ['snake', 'frogger', 'anagrams', 'stacker'] as const
 
 export type TadpoleEarningGameId = (typeof TADPOLE_EARNING_GAMES)[number]
+
+export interface AnagramsTadpoleRewardContext {
+  duration: number
+  mode: AnagramsMode
+}
+
+export type TadpoleRewardContext = AnagramsTadpoleRewardContext
 
 export function isTadpoleEarningGame(gameId: string): gameId is TadpoleEarningGameId {
   return (TADPOLE_EARNING_GAMES as readonly string[]).includes(gameId)
 }
 
-export function tadpolesEarnedForGame(gameId: TadpoleEarningGameId, score: number): number {
+export function tadpolesEarnedForGame(
+  gameId: TadpoleEarningGameId,
+  score: number,
+  context?: TadpoleRewardContext,
+): number {
   const safeScore = Math.max(0, score)
 
   switch (gameId) {
     case 'snake':
     case 'frogger':
-      return Math.floor(safeScore)
-    case 'anagrams':
-      return Math.ceil(safeScore / 400)
+    case 'stacker':
+      return safeScore / 4
+    case 'anagrams': {
+      const duration = context?.duration ?? 60
+      const divisor = 100 + duration * 10
+      let earned = Math.ceil(safeScore / divisor)
+      if (context?.mode === 'reps') {
+        earned = Math.floor(earned / 2)
+      }
+      return earned
+    }
   }
 }

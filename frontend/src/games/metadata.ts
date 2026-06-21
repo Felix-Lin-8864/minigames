@@ -2,6 +2,7 @@ import AbcIcon from '@mui/icons-material/Abc'
 import type { ElementType } from 'react'
 import { FrogIcon } from '../components/icons/FrogIcon'
 import { SnakeIcon } from '../components/icons/SnakeIcon'
+import { StackerIcon } from '../components/icons/StackerIcon'
 import { TwentyOneIcon } from '../components/icons/TwentyOneIcon'
 import { RouletteIcon } from '../components/icons/RouletteIcon'
 import type { StatField } from '../stats/types'
@@ -43,6 +44,15 @@ export const gameMetadata: GameMetadata[] = [
     description: 'Form words from random letters and rack up points before time runs out.',
     route: '/games/anagrams',
     icon: AbcIcon,
+    category: 'mini',
+    statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
+  },
+  {
+    id: 'stacker',
+    name: 'Stacker',
+    description: 'Drop sliding blocks onto the stack — align perfectly or watch your platform shrink.',
+    route: '/games/stacker',
+    icon: StackerIcon as ElementType,
     category: 'mini',
     statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
   },

@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { localStorageWalletService } from './localStorageWalletService'
-import { tadpolesEarnedForGame } from './tadpoleRewards'
+import { tadpolesEarnedForGame, type TadpoleRewardContext } from './tadpoleRewards'
 import type { WalletService } from './WalletService'
 import { WalletContext } from './WalletContext'
 import { createEmptyWallet, type Wallet } from './types'
@@ -65,8 +65,12 @@ export function WalletProvider({
   )
 
   const creditTadpolesForGame = useCallback(
-    async (gameId: Parameters<typeof tadpolesEarnedForGame>[0], score: number) => {
-      const earned = tadpolesEarnedForGame(gameId, score)
+    async (
+      gameId: Parameters<typeof tadpolesEarnedForGame>[0],
+      score: number,
+      context?: TadpoleRewardContext,
+    ) => {
+      const earned = tadpolesEarnedForGame(gameId, score, context)
       if (earned > 0) await addTadpoles(earned)
       return earned
     },

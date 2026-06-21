@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TadpoleEarningGameId } from './tadpoleRewards'
+import type { TadpoleEarningGameId, TadpoleRewardContext } from './tadpoleRewards'
 import { useWallet } from './useWallet'
 
 export function useCreditWalletOnGameOver(
   gameId: TadpoleEarningGameId,
   status: string,
   score: number,
+  context?: TadpoleRewardContext,
 ) {
   const { creditTadpolesForGame } = useWallet()
   const creditedRef = useRef(false)
@@ -22,10 +23,10 @@ export function useCreditWalletOnGameOver(
     if (status !== 'gameover' || creditedRef.current) return
 
     creditedRef.current = true
-    void creditTadpolesForGame(gameId, score).then((earned) => {
+    void creditTadpolesForGame(gameId, score, context).then((earned) => {
       setEarnedAmount(earned)
     })
-  }, [status, score, gameId, creditTadpolesForGame])
+  }, [status, score, gameId, context, creditTadpolesForGame])
 
   const dismissNotification = useCallback(() => {
     setEarnedAmount(null)

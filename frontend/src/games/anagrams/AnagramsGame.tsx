@@ -231,6 +231,10 @@ export function AnagramsGame() {
     'anagrams',
     snapshot.status,
     snapshot.score,
+    {
+      duration: snapshot.config.timeLimit,
+      mode: snapshot.config.mode,
+    },
   )
 
   useEffect(() => {

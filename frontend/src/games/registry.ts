@@ -3,6 +3,7 @@ import { gameMetadata, type GameMetadata } from './metadata'
 import { AnagramsPage } from '../pages/games/AnagramsPage'
 import { FroggerPage } from '../pages/games/FroggerPage'
 import { SnakePage } from '../pages/games/SnakePage'
+import { StackerPage } from '../pages/games/StackerPage'
 import { TwentyOnePage } from '../pages/games/TwentyOnePage'
 import { RoulettePage } from '../pages/games/RoulettePage'
 
@@ -14,6 +15,7 @@ const components: Record<string, ComponentType> = {
   snake: SnakePage,
   frogger: FroggerPage,
   anagrams: AnagramsPage,
+  stacker: StackerPage,
   'twenty-one': TwentyOnePage,
   roulette: RoulettePage,
 }

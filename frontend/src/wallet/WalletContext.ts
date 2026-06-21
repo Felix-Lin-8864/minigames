@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { TadpoleEarningGameId } from './tadpoleRewards'
+import type { TadpoleEarningGameId, TadpoleRewardContext } from './tadpoleRewards'
 import type { Wallet } from './types'
 
 export interface WalletContextValue {
@@ -10,6 +10,7 @@ export interface WalletContextValue {
   creditTadpolesForGame: (
     gameId: TadpoleEarningGameId,
     score: number,
+    context?: TadpoleRewardContext,
   ) => Promise<number>
   refreshWallet: () => Promise<void>
 }
