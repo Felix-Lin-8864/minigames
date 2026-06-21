@@ -1,4 +1,4 @@
-import { createMultiplierBoost, isValidAdjacency, resolveSpin, type Bet } from './bets'
+import { createMultiplierBoost, isValidAdjacency, resolveSpin, betZoneKey, type Bet } from './bets'
 import { getBoostTadpoleCost } from './boost'
 import { MIN_BET, RECENT_SPINS_LIMIT } from './constants'
 import type { RouletteAction, RouletteSnapshot, RouletteState } from './types'
@@ -113,6 +113,14 @@ export function rouletteReducer(
       return {
         ...state,
         pendingBets: state.pendingBets.filter((_, i) => i !== action.index),
+      }
+    }
+
+    case 'remove_bet_zone': {
+      if (state.phase !== 'betting') return state
+      return {
+        ...state,
+        pendingBets: state.pendingBets.filter((b) => betZoneKey(b) !== action.zoneKey),
       }
     }
 

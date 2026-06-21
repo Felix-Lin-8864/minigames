@@ -41,6 +41,7 @@ export function RouletteGame() {
     setBoostAmount,
     placeBet,
     clearBets,
+    removeBetZone,
     rebet,
     spin,
     completeRound,
@@ -122,6 +123,7 @@ export function RouletteGame() {
                   walletBalance={wallet.balance}
                   onBetAmountChange={setChip}
                   onBoostAmountChange={setBoostAmount}
+                  onRemoveBetZone={removeBetZone}
                   onSpin={() => void spin()}
                   onRebet={rebet}
                   onClearBets={clearBets}

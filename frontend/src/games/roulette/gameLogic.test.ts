@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createInsideBet, createOutsideBet } from './bets'
+import { betZoneKey, createInsideBet, createOutsideBet } from './bets'
 import { MIN_BET } from './constants'
 import {
   createInitialState,
@@ -176,5 +176,22 @@ describe('rouletteReducer clear and remove', () => {
     state = rouletteReducer(state, { type: 'remove_bet', index: 0 })
     expect(state.pendingBets).toHaveLength(1)
     expect(state.pendingBets[0]!.numbers).toEqual([2])
+  })
+
+  it('removes all bets in a zone', () => {
+    let state = createInitialState()
+    const split = createInsideBet('split', [1, 2], MIN_BET)!
+    state = rouletteReducer(state, { type: 'place_bet', bet: split })
+    state = rouletteReducer(state, { type: 'place_bet', bet: split })
+    state = rouletteReducer(state, {
+      type: 'place_bet',
+      bet: createInsideBet('straight', [7], MIN_BET)!,
+    })
+    state = rouletteReducer(state, {
+      type: 'remove_bet_zone',
+      zoneKey: betZoneKey(split),
+    })
+    expect(state.pendingBets).toHaveLength(1)
+    expect(state.pendingBets[0]!.type).toBe('straight')
   })
 })

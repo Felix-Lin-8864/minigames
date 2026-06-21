@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
 import { NumericInput } from '../../components/NumericInput'
 import { formatTadpoles } from '../../wallet/tadpoleAmount'
+import { ActiveBetsTable } from './ActiveBetsTable'
 import { MIN_BET, WHEEL_SPIN_MS } from './constants'
 import { NUMBER_DATA } from './numberData'
 import { pocketColorSx } from './RecentSpins'
@@ -22,6 +23,7 @@ interface SpinSidePanelProps {
   walletBalance: number
   onBetAmountChange: (amount: number) => void
   onBoostAmountChange: (amount: number) => void
+  onRemoveBetZone: (zoneKey: string) => void
   onSpin: () => void
   onRebet: () => void
   onClearBets: () => void
@@ -101,6 +103,7 @@ export function SpinSidePanel({
   walletBalance,
   onBetAmountChange,
   onBoostAmountChange,
+  onRemoveBetZone,
   onSpin,
   onRebet,
   onClearBets,
@@ -182,51 +185,19 @@ export function SpinSidePanel({
               placeholder="0"
             />
           </Stack>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={onSpin}
-              disabled={!canSpin}
-              sx={{ flex: 1, minWidth: 88 }}
-            >
-              Spin
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={onRebet}
-              disabled={!canRebet}
-              sx={{ flex: 1, minWidth: 88 }}
-            >
-              Rebet
-            </Button>
-            <Button
-              variant="outlined"
-              color="inherit"
-              onClick={onClearBets}
-              disabled={!canClearBets}
-              sx={{ flex: 1, minWidth: 88 }}
-            >
-              Clear bets
-            </Button>
-          </Stack>
 
-          {(snapshot.pendingBets.length > 0 || snapshot.boostCost > 0) && (
-            <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
-              Total staked: {formatTadpoles(snapshot.totalStaked)}
-              {snapshot.boostCost > 0 && ` · Boost: ${formatTadpoles(snapshot.boostCost)}`}
-              {snapshot.totalWager > 0 &&
-                ` · Total wager: ${formatTadpoles(snapshot.totalWager)}`}
+          {snapshot.boostAmount > 0 && (
+            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+              {formatTadpoles(snapshot.boostAmount)} for {snapshot.boostAmount}× on a random
+              pocket (revealed when you spin)
             </Typography>
           )}
 
-          {snapshot.pendingBets.length > 0 && walletBalance < snapshot.totalWager && (
-            <Alert severity="warning" sx={{ py: 0.25 }}>
-              Not enough tadpoles to cover all bets
-              {snapshot.boostCost > 0 ? ' and the boost.' : '.'}
-            </Alert>
-          )}
+          <ActiveBetsTable
+            pendingBets={snapshot.pendingBets}
+            phase={snapshot.phase}
+            onRemoveZone={onRemoveBetZone}
+          />
 
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
             Boost costs tadpoles equal to the boost amount (any amount above 0) and applies that
@@ -247,12 +218,6 @@ export function SpinSidePanel({
           justifyContent: 'center',
         }}
       >
-        {revealStage === 'idle' && (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', px: 2 }}>
-            Wheel spins here when you play
-          </Typography>
-        )}
-
         {showWheel && (
           <Stack
             spacing={1}
@@ -288,64 +253,114 @@ export function SpinSidePanel({
           </Stack>
         )}
 
-      {showResults && (
-        <Stack
-          spacing={2}
-          sx={{
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            overflow: 'auto',
-          }}
-        >
+        {showResults && (
           <Stack
-            direction="row"
             spacing={2}
-            sx={{ alignItems: 'flex-start', justifyContent: 'center', flexWrap: 'wrap', gap: 2 }}
-          >
-            <PocketBadge number={snapshot.spinResult!} label="Winning number" />
-            {hadBoost && snapshot.boostedPocket != null && (
-              <Stack spacing={0.75} sx={{ alignItems: 'center' }}>
-                <PocketBadge number={snapshot.boostedPocket} label="Boosted pocket" outline />
-                <Typography variant="body2" color="warning.main">
-                  {snapshot.boostAmount}× multiplier
-                  {snapshot.multiplierHit ? ' · applied' : ''}
-                </Typography>
-              </Stack>
-            )}
-          </Stack>
-          <Typography
-            variant="h5"
             sx={{
-              fontFamily: '"Fredoka", sans-serif',
-              fontWeight: 600,
-              color:
-                snapshot.lastSpinNet > 0
-                  ? 'primary.main'
-                  : snapshot.lastSpinNet < 0
-                    ? 'error.light'
-                    : 'text.primary',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              overflow: 'auto',
             }}
           >
-            {snapshot.lastSpinNet > 0
-              ? 'You win!'
-              : snapshot.lastSpinNet < 0
-                ? 'You lose'
-                : 'Break even'}
-          </Typography>
-          {snapshot.message && (
-            <Typography variant="body2" color="text.secondary">
-              {snapshot.message}
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{ alignItems: 'flex-start', justifyContent: 'center', flexWrap: 'wrap', gap: 2 }}
+            >
+              <PocketBadge number={snapshot.spinResult!} label="Winning number" />
+              {hadBoost && snapshot.boostedPocket != null && (
+                <Stack spacing={0.75} sx={{ alignItems: 'center' }}>
+                  <PocketBadge number={snapshot.boostedPocket} label="Boosted pocket" outline />
+                  <Typography variant="body2" color="warning.main">
+                    {snapshot.boostAmount}× multiplier
+                    {snapshot.multiplierHit ? ' · applied' : ''}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: '"Fredoka", sans-serif',
+                fontWeight: 600,
+                color:
+                  snapshot.lastSpinNet > 0
+                    ? 'primary.main'
+                    : snapshot.lastSpinNet < 0
+                      ? 'error.light'
+                      : 'text.primary',
+              }}
+            >
+              {snapshot.lastSpinNet > 0
+                ? 'You win!'
+                : snapshot.lastSpinNet < 0
+                  ? 'You lose'
+                  : 'Break even'}
+            </Typography>
+            {snapshot.message && (
+              <Typography variant="body2" color="text.secondary">
+                {snapshot.message}
+              </Typography>
+            )}
+            <Button variant="contained" color="secondary" onClick={onPlayAgain}>
+              Play again
+            </Button>
+          </Stack>
+        )}
+      </Box>
+
+      {showControls && (
+        <Stack spacing={1.5} sx={{ flexShrink: 0, mt: 'auto' }}>
+          {(snapshot.pendingBets.length > 0 || snapshot.boostCost > 0) && (
+            <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
+              Total staked: {formatTadpoles(snapshot.totalStaked)}
+              {snapshot.boostCost > 0 && ` · Boost: ${formatTadpoles(snapshot.boostCost)}`}
+              {snapshot.totalWager > 0 &&
+                ` · Total wager: ${formatTadpoles(snapshot.totalWager)}`}
             </Typography>
           )}
-          <Button variant="contained" color="secondary" onClick={onPlayAgain}>
-            Play again
-          </Button>
+
+          {snapshot.pendingBets.length > 0 && walletBalance < snapshot.totalWager && (
+            <Alert severity="warning" sx={{ py: 0.25 }}>
+              Not enough tadpoles to cover all bets
+              {snapshot.boostCost > 0 ? ' and the boost.' : '.'}
+            </Alert>
+          )}
+
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={onSpin}
+              disabled={!canSpin}
+              sx={{ flex: 1, minWidth: 88 }}
+            >
+              Spin
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={onRebet}
+              disabled={!canRebet}
+              sx={{ flex: 1, minWidth: 88 }}
+            >
+              Rebet
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={onClearBets}
+              disabled={!canClearBets}
+              sx={{ flex: 1, minWidth: 88 }}
+            >
+              Clear bets
+            </Button>
+          </Stack>
         </Stack>
       )}
-      </Box>
     </Box>
   )
 }

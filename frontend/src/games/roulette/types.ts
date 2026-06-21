@@ -43,6 +43,7 @@ export type RouletteAction =
   | { type: 'set_boost_amount'; amount: number }
   | { type: 'place_bet'; bet: Bet }
   | { type: 'remove_bet'; index: number }
+  | { type: 'remove_bet_zone'; zoneKey: string }
   | { type: 'clear_bets' }
   | { type: 'rebet' }
   | { type: 'spin'; spinResult: number; boostedPocket?: number }

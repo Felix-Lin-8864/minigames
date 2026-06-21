@@ -131,6 +131,7 @@ function OutsideCell({
   disabled: boolean
   sx?: object
 }) {
+  const active = chipAmount > 0
   return (
     <Box
       onClick={disabled ? undefined : onClick}
@@ -141,7 +142,8 @@ function OutsideCell({
         justifyContent: 'center',
         cursor: disabled ? 'default' : 'pointer',
         border: '1px solid rgba(255,255,255,0.15)',
-        bgcolor: 'rgba(30, 45, 38, 0.9)',
+        bgcolor: active ? 'rgba(251, 191, 36, 0.2)' : 'rgba(30, 45, 38, 0.9)',
+        boxShadow: active ? 'inset 0 0 0 1px rgba(251, 191, 36, 0.5)' : 'none',
         fontFamily: '"Fredoka", sans-serif',
         fontWeight: 600,
         fontSize: '0.7rem',
@@ -162,13 +164,16 @@ function SplitZone({
   onClick,
   disabled,
   vertical,
+  chipAmount,
   style,
 }: {
   onClick: () => void
   disabled: boolean
   vertical?: boolean
+  chipAmount: number
   style: CSSProperties
 }) {
+  const active = chipAmount > 0
   return (
     <Box
       onClick={disabled ? undefined : onClick}
@@ -176,8 +181,9 @@ function SplitZone({
         position: 'absolute',
         zIndex: 3,
         cursor: disabled ? 'default' : 'pointer',
-        bgcolor: 'transparent',
-        '&:hover': disabled ? {} : { bgcolor: 'rgba(251, 191, 36, 0.25)' },
+        bgcolor: active ? 'rgba(251, 191, 36, 0.45)' : 'transparent',
+        boxShadow: active ? '0 0 6px rgba(251, 191, 36, 0.55)' : 'none',
+        '&:hover': disabled ? {} : { bgcolor: 'rgba(251, 191, 36, 0.55)' },
         ...(vertical
           ? { width: 8, marginLeft: -4 }
           : { height: 8, marginTop: -4 }),
@@ -272,7 +278,7 @@ export function BettingTable({
                   .map((row) => (
                     <OutsideCell
                       key={`street-${row.join('-')}`}
-                      label=""
+                      label="—"
                       onClick={() => placeInside('street', row)}
                       chipAmount={zoneAmount('street', row)}
                       disabled={disabled}
@@ -298,6 +304,7 @@ export function BettingTable({
                         key={`h-${n}-${right}`}
                         onClick={() => placeInside('split', [n, right])}
                         disabled={disabled}
+                        chipAmount={zoneAmount('split', [n, right])}
                         style={{ left: left + CELL - 4, top, width: 8, height: CELL }}
                       />,
                     )
@@ -312,6 +319,7 @@ export function BettingTable({
                         onClick={() => placeInside('split', [n, below])}
                         disabled={disabled}
                         vertical
+                        chipAmount={zoneAmount('split', [n, below])}
                         style={{ left, top: top + CELL - 4, height: 8, width: CELL }}
                       />,
                     )
@@ -325,6 +333,7 @@ export function BettingTable({
                         key={`c-${corner.join('-')}`}
                         onClick={() => placeInside('corner', corner)}
                         disabled={disabled}
+                        chipAmount={zoneAmount('corner', corner)}
                         style={{
                           left: left + CELL - 6,
                           top: top + CELL - 6,
@@ -351,6 +360,7 @@ export function BettingTable({
                   key={`six-${numbers.join('-')}`}
                   onClick={() => placeInside('sixline', numbers)}
                   disabled={disabled}
+                  chipAmount={zoneAmount('sixline', numbers)}
                   style={{ left: 0, top, width: 3 * CELL, height: 8 }}
                 />
               )
@@ -360,16 +370,19 @@ export function BettingTable({
             <SplitZone
               onClick={() => placeInside('split', [0, 1])}
               disabled={disabled}
+              chipAmount={zoneAmount('split', [0, 1])}
               style={{ left: -4, top: (GRID_ROWS - 1) * CELL, width: 8, height: CELL }}
             />
             <SplitZone
               onClick={() => placeInside('split', [0, 2])}
               disabled={disabled}
+              chipAmount={zoneAmount('split', [0, 2])}
               style={{ left: -4, top: (GRID_ROWS - 2) * CELL + CELL / 2 - 4, width: 8, height: 8 }}
             />
             <SplitZone
               onClick={() => placeInside('split', [0, 3])}
               disabled={disabled}
+              chipAmount={zoneAmount('split', [0, 3])}
               style={{ left: -4, top: 0, width: 8, height: CELL }}
             />
           </Box>

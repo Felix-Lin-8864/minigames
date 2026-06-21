@@ -34,6 +34,10 @@ export function useRouletteGame() {
     dispatch({ type: 'clear_bets' })
   }, [])
 
+  const removeBetZone = useCallback((zoneKey: string) => {
+    dispatch({ type: 'remove_bet_zone', zoneKey })
+  }, [])
+
   const rebet = useCallback(() => {
     dispatch({ type: 'rebet' })
   }, [])
@@ -77,6 +81,7 @@ export function useRouletteGame() {
     setBoostAmount,
     placeBet,
     clearBets,
+    removeBetZone,
     rebet,
     spin,
     completeRound,
