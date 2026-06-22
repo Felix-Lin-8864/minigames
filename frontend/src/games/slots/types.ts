@@ -7,16 +7,21 @@ export type SlotSymbol =
   | 'egg'
   | 'goldenfrog'
 
+export type MatchKind = 'three' | 'two' | 'none'
+
 export interface SpinResult {
   reels: [SlotSymbol, SlotSymbol, SlotSymbol]
   payout: number
   multiplier: number
+  matchKind: MatchKind
+  winningSymbol: SlotSymbol | null
 }
 
 export interface SlotsConfig {
   symbols: SlotSymbol[]
   weights: number[]
   payouts: Record<SlotSymbol, number>
+  partialPayouts: Partial<Record<SlotSymbol, number>>
   minBet: number
 }
 
@@ -41,6 +46,8 @@ export type SlotsAction =
       reels: [SlotSymbol, SlotSymbol, SlotSymbol]
       payout: number
       multiplier: number
+      matchKind: MatchKind
+      winningSymbol: SlotSymbol | null
     }
   | { type: 'complete_spin' }
 

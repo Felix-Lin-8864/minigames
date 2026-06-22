@@ -37,13 +37,20 @@ export function useSlotsGame() {
     if (!spent) return false
 
     const reels = spinReels(DEFAULT_CONFIG)
-    const result = evaluateSpin(reels, bet, DEFAULT_CONFIG.payouts)
+    const result = evaluateSpin(
+      reels,
+      bet,
+      DEFAULT_CONFIG.payouts,
+      DEFAULT_CONFIG.partialPayouts,
+    )
     dispatch({
       type: 'spin',
       bet,
       reels,
       payout: result.payout,
       multiplier: result.multiplier,
+      matchKind: result.matchKind,
+      winningSymbol: result.winningSymbol,
     })
     return true
   }, [spendTadpoles, wallet.balance])

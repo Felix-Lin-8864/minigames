@@ -3,8 +3,8 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
-import { PAYOUTS, SYMBOL_WEIGHTS } from './constants'
-import { DEFAULT_CONFIG, theoreticalRtp } from './gameLogic'
+import { PARTIAL_PAYOUTS, PAYOUTS, SYMBOL_WEIGHTS } from './constants'
+import { DEFAULT_CONFIG, theoreticalRtp, twoOfAKindProbability } from './gameLogic'
 import { sessionNet, sessionRtp, winRate, type SlotsSessionStats } from './sessionStats'
 import { SlotSymbolIcon } from './SlotSymbolIcon'
 import { SYMBOL_LABELS } from './symbols'
@@ -64,7 +64,11 @@ export function StatPanel({ session }: StatPanelProps) {
         {DEFAULT_CONFIG.symbols.map((symbol, index) => {
           const pReel = SYMBOL_WEIGHTS[index]! / totalWeight
           const pThree = pReel ** 3
-          const contribution = pThree * PAYOUTS[symbol]
+          const pTwo = twoOfAKindProbability(pReel)
+          const threeContribution = pThree * PAYOUTS[symbol]
+          const partial = PARTIAL_PAYOUTS[symbol]
+          const twoContribution = partial != null ? pTwo * partial : 0
+          const contribution = threeContribution + twoContribution
           return (
             <Box key={symbol}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
@@ -74,10 +78,12 @@ export function StatPanel({ session }: StatPanelProps) {
                 </Typography>
                 <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
                   {PAYOUTS[symbol]}×
+                  {partial != null ? ` / 2×${partial}×` : ''}
                 </Typography>
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {(pReel * 100).toFixed(0)}% / reel · {(pThree * 100).toFixed(3)}% 3× · RTP{' '}
+                {(pReel * 100).toFixed(0)}% / reel · {(pThree * 100).toFixed(3)}% 3×
+                {partial != null ? ` · ${(pTwo * 100).toFixed(2)}% 2×` : ''} · RTP{' '}
                 {(contribution * 100).toFixed(1)}%
               </Typography>
             </Box>

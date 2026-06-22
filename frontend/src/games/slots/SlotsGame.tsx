@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { NumericInput } from '../../components/NumericInput'
 import { FrogDollarIcon } from '../../components/icons/FrogDollarIcon'
 import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
-import { MIN_BET, PAYOUTS, REEL_STOP_MS, SPIN_DURATION_MS } from './constants'
+import { MIN_BET, PARTIAL_PAYOUTS, PAYOUTS, REEL_STOP_MS, SPIN_DURATION_MS } from './constants'
 import { DEFAULT_CONFIG } from './gameLogic'
 import { randomFillerSymbol, SlotReel, SYMBOL_HEIGHT } from './SlotReel'
 import { readPanelPreferences, writePanelPreferences } from './panelPreferences'
@@ -50,27 +50,55 @@ function parseBetInput(input: string): number | null {
 }
 
 function PayoutTable() {
+  const partialSymbols = DEFAULT_CONFIG.symbols.filter(
+    (symbol) => PARTIAL_PAYOUTS[symbol] != null,
+  )
+
   return (
-    <Stack spacing={0.5} sx={{ width: '100%' }}>
-      <Typography variant="overline" color="text.secondary">
-        3-of-a-kind payouts
-      </Typography>
-      {DEFAULT_CONFIG.symbols.map((symbol) => (
-        <Stack
-          key={symbol}
-          direction="row"
-          spacing={1}
-          sx={{ justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <SlotSymbolIcon symbol={symbol} size="1.25rem" />
-            {SYMBOL_LABELS[symbol]}
-          </Typography>
-          <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-            {PAYOUTS[symbol]}×
-          </Typography>
-        </Stack>
-      ))}
+    <Stack spacing={1.5} sx={{ width: '100%' }}>
+      <Stack spacing={0.5}>
+        <Typography variant="overline" color="text.secondary">
+          3-of-a-kind payouts
+        </Typography>
+        {DEFAULT_CONFIG.symbols.map((symbol) => (
+          <Stack
+            key={symbol}
+            direction="row"
+            spacing={1}
+            sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <SlotSymbolIcon symbol={symbol} size="1.25rem" />
+              {SYMBOL_LABELS[symbol]}
+            </Typography>
+            <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              {PAYOUTS[symbol]}×
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
+
+      <Stack spacing={0.5}>
+        <Typography variant="overline" color="text.secondary">
+          2-of-a-kind partial payouts
+        </Typography>
+        {partialSymbols.map((symbol) => (
+          <Stack
+            key={symbol}
+            direction="row"
+            spacing={1}
+            sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <SlotSymbolIcon symbol={symbol} size="1.25rem" />
+              {SYMBOL_LABELS[symbol]}
+            </Typography>
+            <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              {PARTIAL_PAYOUTS[symbol]}×{PARTIAL_PAYOUTS[symbol] === 1 ? ' (refund)' : ''}
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
     </Stack>
   )
 }

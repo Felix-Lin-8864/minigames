@@ -25,6 +25,13 @@ export const PAYOUTS: Record<SlotSymbol, number> = {
   goldenfrog: 100,
 }
 
+/** 2-of-a-kind partial payouts for rare symbols only. */
+export const PARTIAL_PAYOUTS: Partial<Record<SlotSymbol, number>> = {
+  caterpillar: 3,
+  egg: 5,
+  goldenfrog: 8,
+}
+
 /** Per-reel stop delay after spin is triggered (left, centre, right). */
 export const REEL_STOP_MS = [600, 900, 1200] as const
 

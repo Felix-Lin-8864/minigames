@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MIN_BET, PAYOUTS, SLOT_SYMBOLS, SYMBOL_WEIGHTS } from './constants'
+import { MIN_BET, PARTIAL_PAYOUTS, PAYOUTS, SLOT_SYMBOLS, SYMBOL_WEIGHTS } from './constants'
 import {
   DEFAULT_CONFIG,
   createInitialState,
@@ -58,29 +58,63 @@ describe('evaluateSpin', () => {
   it.each(SLOT_SYMBOLS)('returns bet * multiplier for three %s', (symbol) => {
     const reels: [SlotSymbol, SlotSymbol, SlotSymbol] = [symbol, symbol, symbol]
     const multiplier = PAYOUTS[symbol]
-    const result = evaluateSpin(reels, bet, PAYOUTS)
+    const result = evaluateSpin(reels, bet, PAYOUTS, PARTIAL_PAYOUTS)
     expect(result.payout).toBe(bet * multiplier)
     expect(result.multiplier).toBe(multiplier)
+    expect(result.matchKind).toBe('three')
+    expect(result.winningSymbol).toBe(symbol)
     expect(result.reels).toEqual(reels)
   })
 
   it('returns zero payout for mixed symbols', () => {
-    const result = evaluateSpin(['fly', 'reed', 'droplet'], bet, PAYOUTS)
+    const result = evaluateSpin(['fly', 'reed', 'droplet'], bet, PAYOUTS, PARTIAL_PAYOUTS)
     expect(result.payout).toBe(0)
     expect(result.multiplier).toBe(0)
+    expect(result.matchKind).toBe('none')
   })
 
-  it('returns zero payout for two-of-a-kind', () => {
-    const result = evaluateSpin(['fly', 'fly', 'reed'], bet, PAYOUTS)
+  it('returns zero payout for two-of-a-kind on common symbols', () => {
+    const result = evaluateSpin(['fly', 'fly', 'reed'], bet, PAYOUTS, PARTIAL_PAYOUTS)
     expect(result.payout).toBe(0)
     expect(result.multiplier).toBe(0)
+    expect(result.matchKind).toBe('none')
+  })
+
+  it('returns partial payout for two caterpillars', () => {
+    const result = evaluateSpin(['caterpillar', 'caterpillar', 'fly'], bet, PAYOUTS, PARTIAL_PAYOUTS)
+    expect(result.payout).toBe(bet * 3)
+    expect(result.multiplier).toBe(3)
+    expect(result.matchKind).toBe('two')
+    expect(result.winningSymbol).toBe('caterpillar')
+  })
+
+  it('returns partial payout for two frog eggs', () => {
+    const result = evaluateSpin(['reed', 'egg', 'egg'], bet, PAYOUTS, PARTIAL_PAYOUTS)
+    expect(result.payout).toBe(bet * 5)
+    expect(result.multiplier).toBe(5)
+    expect(result.matchKind).toBe('two')
+    expect(result.winningSymbol).toBe('egg')
+  })
+
+  it('returns partial payout for two golden frogs', () => {
+    const result = evaluateSpin(['goldenfrog', 'fly', 'goldenfrog'], bet, PAYOUTS, PARTIAL_PAYOUTS)
+    expect(result.payout).toBe(bet * 8)
+    expect(result.multiplier).toBe(8)
+    expect(result.matchKind).toBe('two')
+    expect(result.winningSymbol).toBe('goldenfrog')
+  })
+
+  it('prefers three-of-a-kind over partial payout', () => {
+    const result = evaluateSpin(['egg', 'egg', 'egg'], bet, PAYOUTS, PARTIAL_PAYOUTS)
+    expect(result.payout).toBe(bet * PAYOUTS.egg)
+    expect(result.matchKind).toBe('three')
   })
 })
 
 describe('theoreticalRtp', () => {
-  it('matches the spec approximate RTP of ~15.2%', () => {
+  it('includes three-of-a-kind and partial two-of-a-kind contributions', () => {
     const rtp = theoreticalRtp(DEFAULT_CONFIG)
-    expect(rtp).toBeCloseTo(0.152, 2)
+    expect(rtp).toBeCloseTo(0.258, 2)
   })
 })
 
@@ -96,6 +130,8 @@ describe('slotsReducer', () => {
       reels: ['fly', 'fly', 'fly'],
       payout: 50,
       multiplier: 2,
+      matchKind: 'three',
+      winningSymbol: 'fly',
     })
     state = slotsReducer(state, { type: 'set_bet', bet: 10 })
     expect(state.pendingBet).toBe(25)
@@ -109,6 +145,8 @@ describe('slotsReducer', () => {
       reels: ['fly', 'fly', 'fly'],
       payout: 10,
       multiplier: 2,
+      matchKind: 'three',
+      winningSymbol: 'fly',
     })
     expect(state.phase).toBe('spinning')
 
@@ -118,6 +156,8 @@ describe('slotsReducer', () => {
       reels: ['reed', 'reed', 'reed'],
       payout: 15,
       multiplier: 3,
+      matchKind: 'three',
+      winningSymbol: 'reed',
     })
     expect(state.reels).toEqual(['fly', 'fly', 'fly'])
   })
@@ -130,6 +170,8 @@ describe('slotsReducer', () => {
       reels: ['goldenfrog', 'goldenfrog', 'goldenfrog'],
       payout: 500,
       multiplier: 100,
+      matchKind: 'three',
+      winningSymbol: 'goldenfrog',
     })
     expect(state.phase).toBe('spinning')
     expect(state.bet).toBe(5)
@@ -145,6 +187,8 @@ describe('slotsReducer', () => {
       reels: ['fly', 'reed', 'droplet'],
       payout: 0,
       multiplier: 0,
+      matchKind: 'none',
+      winningSymbol: null,
     })
     expect(state.phase).toBe('spinning')
   })
@@ -165,7 +209,7 @@ describe('RTP simulation', () => {
 
     for (let i = 0; i < spins; i += 1) {
       const reels = spinReels(DEFAULT_CONFIG)
-      const { payout } = evaluateSpin(reels, bet, PAYOUTS)
+      const { payout } = evaluateSpin(reels, bet, PAYOUTS, PARTIAL_PAYOUTS)
       totalWagered += bet
       totalPayout += payout
     }
