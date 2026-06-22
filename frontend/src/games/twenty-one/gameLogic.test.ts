@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getOptimalMove } from './basicStrategy'
 import { createCard } from './cards'
 import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, SHOE_SIZE } from './constants'
+import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
 import { createInitialState, twentyOneReducer, toSnapshot } from './gameLogic'
 import { evaluatePairBet } from './pairBet'
 import { fisherYatesShuffle } from './shuffle'
@@ -308,5 +309,25 @@ describe('game reducer', () => {
     }
 
     throw new Error('could not find a seed for pair-bet independence test')
+  })
+
+  it('includes tadpole winnings in the message for an immediate player blackjack', () => {
+    for (let seed = 0; seed < 300; seed += 1) {
+      const random = deterministicRandom([seed / 100, 0.5, 0.25, 0.75])
+      let state = createInitialState(createShoe(random))
+      state = twentyOneReducer(state, { type: 'set_bet', bet: MIN_BET })
+      state = dealHand(state)
+      if (state.phase === 'pair_reveal') {
+        state = twentyOneReducer(state, { type: 'continue_after_pair' })
+      }
+      if (state.phase !== 'resolved') continue
+      if (state.playerHands[0]!.outcome !== 'blackjack') continue
+
+      expect(state.lastHandNet).toBeGreaterThan(0)
+      expect(state.message).toBe(`You won ${formatTadpolesFixed(state.lastHandNet, 2)} tadpoles!`)
+      return
+    }
+
+    throw new Error('could not find an immediate blackjack seed')
   })
 })

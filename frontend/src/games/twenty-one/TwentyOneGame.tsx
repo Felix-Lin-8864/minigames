@@ -8,7 +8,6 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
 import { NumericInput } from '../../components/NumericInput'
 import { FrogDollarIcon } from '../../components/icons/FrogDollarIcon'
 import { useWallet } from '../../wallet/useWallet'
@@ -18,7 +17,7 @@ import { getHandValue } from './handValue'
 import { HiLoPanel } from './HiLoPanel'
 import { PAIR_RESULT_LABELS } from './pairBet'
 import { readPanelPreferences, writePanelPreferences } from './panelPreferences'
-import { PlayingCard } from './PlayingCard'
+import { CardPlaceholder, PlayingCard } from './PlayingCard'
 import { StatPanel } from './StatPanel'
 import { didShoeJustReshuffle } from './shoe'
 import type { TwentyOneSnapshot } from './types'
@@ -71,6 +70,8 @@ function totalStaked(snapshot: TwentyOneSnapshot): number {
 }
 
 function resultHeadline(snapshot: TwentyOneSnapshot): string {
+  const playerBlackjack = snapshot.playerHands.some((hand) => hand.outcome === 'blackjack')
+  if (playerBlackjack && snapshot.lastHandNet > 0) return 'Blackjack!'
   if (snapshot.lastHandNet > 0) return 'You win!'
   if (snapshot.lastHandNet < 0) return 'You lose'
   return 'Push'
@@ -175,6 +176,8 @@ export function TwentyOneGame() {
     parsedBet !== null ? parsedBet + (parsedPairBet > 0 ? parsedPairBet : 0) : null
   const activeHand = snapshot.playerHands[snapshot.activeHandIndex]
   const staked = totalStaked(snapshot)
+  const showCardPlaceholders =
+    snapshot.dealerHand.length === 0 && snapshot.playerHands.length === 0
   const dealerValue =
     snapshot.dealerHoleRevealed || snapshot.phase === 'resolved'
       ? getHandValue(snapshot.dealerHand).total
@@ -298,9 +301,16 @@ export function TwentyOneGame() {
                   Dealer {snapshot.dealerHand.length > 0 && `· ${dealerValue}`}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, minHeight: 92 }}>
-                  {snapshot.dealerHand.map((card, index) => (
-                    <PlayingCard key={`dealer-${index}`} card={card} />
-                  ))}
+                  {showCardPlaceholders ? (
+                    <>
+                      <CardPlaceholder />
+                      <CardPlaceholder faceDown />
+                    </>
+                  ) : (
+                    snapshot.dealerHand.map((card, index) => (
+                      <PlayingCard key={`dealer-${index}`} card={card} />
+                    ))
+                  )}
                 </Stack>
               </Box>
 
@@ -319,28 +329,35 @@ export function TwentyOneGame() {
                   {activeHand && ` · ${getHandValue(activeHand.cards).total}`}
                 </Typography>
                 <Stack spacing={2}>
-                  {snapshot.playerHands.map((hand, handIndex) => (
-                    <Stack
-                      key={`hand-${handIndex}`}
-                      direction="row"
-                      spacing={1}
-                      sx={{
-                        flexWrap: 'wrap',
-                        gap: 1,
-                        p: handIndex === snapshot.activeHandIndex ? 1 : 0,
-                        borderRadius: 1,
-                        outline:
-                          handIndex === snapshot.activeHandIndex && snapshot.phase === 'playing'
-                            ? '2px solid'
-                            : 'none',
-                        outlineColor: 'primary.main',
-                      }}
-                    >
-                      {hand.cards.map((card, cardIndex) => (
-                        <PlayingCard key={`p-${handIndex}-${cardIndex}`} card={card} compact />
-                      ))}
+                  {showCardPlaceholders ? (
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                      <CardPlaceholder compact />
+                      <CardPlaceholder compact />
                     </Stack>
-                  ))}
+                  ) : (
+                    snapshot.playerHands.map((hand, handIndex) => (
+                      <Stack
+                        key={`hand-${handIndex}`}
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          flexWrap: 'wrap',
+                          gap: 1,
+                          p: handIndex === snapshot.activeHandIndex ? 1 : 0,
+                          borderRadius: 1,
+                          outline:
+                            handIndex === snapshot.activeHandIndex && snapshot.phase === 'playing'
+                              ? '2px solid'
+                              : 'none',
+                          outlineColor: 'primary.main',
+                        }}
+                      >
+                        {hand.cards.map((card, cardIndex) => (
+                          <PlayingCard key={`p-${handIndex}-${cardIndex}`} card={card} compact />
+                        ))}
+                      </Stack>
+                    ))
+                  )}
                 </Stack>
               </Box>
             </Stack>
@@ -408,9 +425,6 @@ export function TwentyOneGame() {
             </Stack>
           )}
 
-          <Button component={RouterLink} to="/" variant="text" color="inherit">
-            Back to the pond
-          </Button>
         </Stack>
 
         {panels.showHiLoPanel && <HiLoPanel snapshot={snapshot} />}

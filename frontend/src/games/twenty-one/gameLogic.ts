@@ -15,6 +15,7 @@ import {
 } from './hand'
 import { getHandValue, isBlackjack, isBusted, isPair } from './handValue'
 import { evaluatePairBet, getPairPayout } from './pairBet'
+import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
 import {
   completeHand,
   createShoe,
@@ -121,6 +122,12 @@ function advanceActiveHand(state: TwentyOneState): TwentyOneState {
   return { ...state, activeHandIndex: nextIndex }
 }
 
+function handNetMessage(net: number): string {
+  if (net > 0) return `You won ${formatTadpolesFixed(net, 2)} tadpoles!`
+  if (net < 0) return `You lost ${formatTadpolesFixed(Math.abs(net), 2)} tadpoles.`
+  return 'Push.'
+}
+
 function checkImmediateBlackjacks(state: TwentyOneState): TwentyOneState {
   const playerHand = state.playerHands[0]!
   const playerBJ = isBlackjack(playerHand.cards)
@@ -148,23 +155,23 @@ function checkImmediateBlackjacks(state: TwentyOneState): TwentyOneState {
     net = 0
   } else if (playerBJ) {
     const payout = blackjackPayout(playerHand.bet)
+    net = payout - playerHand.bet
     hands[0] = {
       ...playerHand,
       status: 'blackjack',
       outcome: 'blackjack',
       payout,
     }
-    message = 'Blackjack!'
-    net = payout - playerHand.bet
+    message = handNetMessage(net)
   } else {
+    net = -playerHand.bet
     hands[0] = {
       ...playerHand,
       status: 'stood',
       outcome: 'lose',
       payout: 0,
     }
-    message = 'Dealer has blackjack.'
-    net = -playerHand.bet
+    message = `Dealer has blackjack. ${handNetMessage(net)}`
   }
 
   const { shoe: nextShoe } = completeHand(shoe)
@@ -403,7 +410,7 @@ export function startDealerTurn(state: TwentyOneState): TwentyOneState {
     dealerHoleRevealed: true,
     playerHands,
     lastHandNet: net,
-    message: net > 0 ? `You won ${net} tadpoles!` : net < 0 ? `You lost ${Math.abs(net)} tadpoles.` : 'Push.',
+    message: handNetMessage(net),
   })
 }
 

@@ -8,9 +8,56 @@ const SUIT_COLORS = {
   black: '#0f172a',
 } as const
 
+function cardDimensions(compact: boolean) {
+  return { width: compact ? 52 : 64, height: compact ? 76 : 92 }
+}
+
+export function CardPlaceholder({
+  compact = false,
+  faceDown = false,
+}: {
+  compact?: boolean
+  faceDown?: boolean
+}) {
+  const { width, height } = cardDimensions(compact)
+
+  if (faceDown) {
+    return (
+      <Box
+        sx={{
+          width,
+          height,
+          borderRadius: 1.5,
+          border: '2px dashed',
+          borderColor: 'divider',
+          bgcolor: 'rgba(74, 222, 128, 0.08)',
+          backgroundImage:
+            'repeating-linear-gradient(45deg, rgba(10,20,16,0.08) 0, rgba(10,20,16,0.08) 4px, transparent 4px, transparent 8px)',
+          flexShrink: 0,
+          opacity: 0.55,
+        }}
+      />
+    )
+  }
+
+  return (
+    <Box
+      sx={{
+        width,
+        height,
+        borderRadius: 1.5,
+        border: '2px dashed',
+        borderColor: 'divider',
+        bgcolor: 'rgba(248, 250, 252, 0.04)',
+        flexShrink: 0,
+        opacity: 0.55,
+      }}
+    />
+  )
+}
+
 export function PlayingCard({ card, compact = false }: { card: Card; compact?: boolean }) {
-  const width = compact ? 52 : 64
-  const height = compact ? 76 : 92
+  const { width, height } = cardDimensions(compact)
 
   if (!card.faceUp) {
     return (
