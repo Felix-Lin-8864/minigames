@@ -3,6 +3,7 @@ import {
   MAX_SPLITS,
   MIN_BET,
   MIN_PAIR_BET,
+  PAIR_BET_STEP,
   SPLIT_ACES_ONE_CARD,
 } from './constants'
 import { cloneRemainingBySuitRank } from './cards'
@@ -422,17 +423,27 @@ export function twentyOneReducer(state: TwentyOneState, action: TwentyOneAction)
         pendingBet: Math.max(MIN_BET, Math.floor(action.bet)),
       }
 
-    case 'set_pair_bet':
+    case 'set_pair_bet': {
+      const pairBet = Math.max(0, Math.floor(action.pairBet))
+      if (pairBet > 0 && (pairBet < MIN_PAIR_BET || pairBet % PAIR_BET_STEP !== 0)) {
+        return state
+      }
       return {
         ...state,
-        pendingPairBet: Math.max(0, Math.floor(action.pairBet)),
+        pendingPairBet: pairBet,
       }
+    }
 
     case 'deal': {
       if (state.phase !== 'betting' && state.phase !== 'resolved') return state
       const bet = Math.max(MIN_BET, Math.floor(action.bet))
       const pairBet = Math.floor(action.pairBet)
-      if (pairBet > 0 && pairBet < MIN_PAIR_BET) return state
+      if (
+        pairBet > 0 &&
+        (pairBet < MIN_PAIR_BET || pairBet % PAIR_BET_STEP !== 0)
+      ) {
+        return state
+      }
       return dealInitialHand({ ...state, pendingBet: bet, pendingPairBet: pairBet }, pairBet)
     }
 

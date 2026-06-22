@@ -8,7 +8,7 @@ import {
   toSnapshot,
   twentyOneReducer,
 } from './gameLogic'
-import { MIN_BET, MIN_PAIR_BET } from './constants'
+import { MIN_BET, MIN_PAIR_BET, PAIR_BET_STEP } from './constants'
 import type { TwentyOneSnapshot } from './types'
 
 const FROGTUNE_GAME_ID = 'twenty-one' as const
@@ -33,7 +33,12 @@ export function useTwentyOneGame() {
     const current = stateRef.current
     if (current.phase !== 'betting' && current.phase !== 'resolved') return false
     if (!Number.isFinite(bet) || bet < MIN_BET) return false
-    if (pairBet > 0 && (!Number.isFinite(pairBet) || pairBet < MIN_PAIR_BET)) return false
+    if (
+      pairBet > 0 &&
+      (!Number.isFinite(pairBet) || pairBet < MIN_PAIR_BET || pairBet % PAIR_BET_STEP !== 0)
+    ) {
+      return false
+    }
 
     const totalSpend = bet + pairBet
     const spent = await spendTadpoles(totalSpend, frogtuneTxn)

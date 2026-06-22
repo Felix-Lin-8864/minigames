@@ -12,15 +12,18 @@ import { NumericInput } from '../../components/NumericInput'
 import { FrogDollarIcon } from '../../components/icons/FrogDollarIcon'
 import { useWallet } from '../../wallet/useWallet'
 import { formatTadpoles, formatTadpolesFixed } from '../../wallet/tadpoleAmount'
-import { MIN_BET, MIN_PAIR_BET } from './constants'
+import { MIN_BET, MIN_PAIR_BET, PAIR_BET_STEP } from './constants'
 import { getHandValue } from './handValue'
 import { HiLoPanel } from './HiLoPanel'
 import { PAIR_RESULT_LABELS } from './pairBet'
 import { readPanelPreferences, writePanelPreferences } from './panelPreferences'
 import { CardPlaceholder, PlayingCard } from './PlayingCard'
+import { visibleDealerHandForTotal } from './cardDealAnimation'
+import { DealAnimatedCard } from './DealAnimatedCard'
 import { StatPanel } from './StatPanel'
 import { didShoeJustReshuffle } from './shoe'
 import type { TwentyOneSnapshot } from './types'
+import { useCardDealAnimation } from './useCardDealAnimation'
 import { useTwentyOneGame } from './useTwentyOneGame'
 
 const RESULT_BANNER_DELAY_MS = 2000
@@ -30,7 +33,7 @@ function parsePairBetInput(input: string): number {
   const trimmed = input.trim()
   if (trimmed === '' || trimmed === '0') return 0
   const value = Math.floor(Number(trimmed))
-  if (!Number.isFinite(value) || value < MIN_PAIR_BET) return -1
+  if (!Number.isFinite(value) || value < MIN_PAIR_BET || value % PAIR_BET_STEP !== 0) return -1
   return value
 }
 
@@ -65,8 +68,11 @@ function TadpoleStack({
   )
 }
 
-function totalStaked(snapshot: TwentyOneSnapshot): number {
-  return snapshot.totalStaked
+function mainBetStaked(snapshot: TwentyOneSnapshot): number {
+  if (snapshot.playerHands.length > 0) {
+    return snapshot.playerHands.reduce((sum, hand) => sum + hand.bet, 0)
+  }
+  return snapshot.bet
 }
 
 function resultHeadline(snapshot: TwentyOneSnapshot): string {
@@ -114,6 +120,8 @@ export function TwentyOneGame() {
     canSplit,
   } = useTwentyOneGame()
   const { wallet } = useWallet()
+  const { isAnimating, isCardVisible, displayCard, dealerHoleFlipped } =
+    useCardDealAnimation(snapshot)
   const [panels, setPanels] = useState(readPanelPreferences)
   const [betInput, setBetInput] = useState(String(MIN_BET))
   const [pairBetInput, setPairBetInput] = useState('')
@@ -175,13 +183,16 @@ export function TwentyOneGame() {
   const totalWager =
     parsedBet !== null ? parsedBet + (parsedPairBet > 0 ? parsedPairBet : 0) : null
   const activeHand = snapshot.playerHands[snapshot.activeHandIndex]
-  const staked = totalStaked(snapshot)
+  const staked = mainBetStaked(snapshot)
   const showCardPlaceholders =
     snapshot.dealerHand.length === 0 && snapshot.playerHands.length === 0
+  const visibleDealerCards = visibleDealerHandForTotal(
+    snapshot.dealerHand,
+    isCardVisible,
+    displayCard,
+  )
   const dealerValue =
-    snapshot.dealerHoleRevealed || snapshot.phase === 'resolved'
-      ? getHandValue(snapshot.dealerHand).total
-      : getHandValue(snapshot.dealerHand.filter((c) => c.faceUp)).total
+    visibleDealerCards.length > 0 ? getHandValue(visibleDealerCards).total : null
 
   async function handleDeal() {
     const bet = parseBetInput(betInput)
@@ -298,7 +309,7 @@ export function TwentyOneGame() {
             <Stack spacing={3}>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Dealer {snapshot.dealerHand.length > 0 && `· ${dealerValue}`}
+                  Dealer {dealerValue != null && `· ${dealerValue}`}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, minHeight: 92 }}>
                   {showCardPlaceholders ? (
@@ -308,7 +319,13 @@ export function TwentyOneGame() {
                     </>
                   ) : (
                     snapshot.dealerHand.map((card, index) => (
-                      <PlayingCard key={`dealer-${index}`} card={card} />
+                      <DealAnimatedCard
+                        key={`dealer-${index}`}
+                        card={displayCard(card, index === 1)}
+                        visible={isCardVisible(card)}
+                        animate
+                        faceDown={index === 1 && !dealerHoleFlipped}
+                      />
                     ))
                   )}
                 </Stack>
@@ -318,7 +335,7 @@ export function TwentyOneGame() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Staked
                 </Typography>
-                <TadpoleStack amount={staked} iconSize={24} />
+                <TadpoleStack amount={staked} iconSize={24} fixedDecimals={2} />
               </Box>
 
               <Box>
@@ -353,7 +370,13 @@ export function TwentyOneGame() {
                         }}
                       >
                         {hand.cards.map((card, cardIndex) => (
-                          <PlayingCard key={`p-${handIndex}-${cardIndex}`} card={card} compact />
+                          <DealAnimatedCard
+                            key={`p-${handIndex}-${cardIndex}`}
+                            card={card}
+                            compact
+                            visible={isCardVisible(card)}
+                            animate
+                          />
                         ))}
                       </Stack>
                     ))
@@ -378,7 +401,7 @@ export function TwentyOneGame() {
                 onChange={handlePairBetChange}
                 placeholder="0"
                 min={0}
-                step={1}
+                step={PAIR_BET_STEP}
               />
               <Button
                 variant="contained"
@@ -388,6 +411,7 @@ export function TwentyOneGame() {
                   pairBetInvalid ||
                   totalWager === null ||
                   wallet.balance < totalWager ||
+                  isAnimating ||
                   (snapshot.phase === 'resolved' && !showResultBanner)
                 }
               >
@@ -396,7 +420,7 @@ export function TwentyOneGame() {
             </Stack>
           )}
 
-          {canAct && (
+          {canAct && !isAnimating && (
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
               <Button variant="contained" onClick={hit}>
                 Hit

@@ -10,6 +10,9 @@ export const HANDS_PER_SHOE = 5
 /** Minimum pair-bet side wager in tadpoles. */
 export const MIN_PAIR_BET = 5
 
+/** Pair-bet input step in tadpoles. */
+export const PAIR_BET_STEP = 5
+
 /** Minimum main-hand wager in tadpoles. */
 export const MIN_BET = 10
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getOptimalMove } from './basicStrategy'
 import { createCard } from './cards'
-import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, SHOE_SIZE } from './constants'
+import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, PAIR_BET_STEP, SHOE_SIZE } from './constants'
 import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
 import { createInitialState, twentyOneReducer, toSnapshot } from './gameLogic'
 import { evaluatePairBet } from './pairBet'
@@ -274,6 +274,13 @@ describe('game reducer', () => {
   it('rejects pair bets below the minimum', () => {
     const state = createInitialState(createShoe(deterministicRandom([0.5])))
     const next = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: MIN_PAIR_BET - 1 })
+    expect(next.phase).toBe('betting')
+    expect(next.playerHands).toHaveLength(0)
+  })
+
+  it('rejects pair bets that are not multiples of the step', () => {
+    const state = createInitialState(createShoe(deterministicRandom([0.5])))
+    const next = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: MIN_PAIR_BET + 2 })
     expect(next.phase).toBe('betting')
     expect(next.playerHands).toHaveLength(0)
   })
