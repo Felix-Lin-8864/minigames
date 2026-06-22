@@ -11,6 +11,9 @@ import {
 import { pickBoostedPocket } from './multiplier'
 import { spinPocket } from './spin'
 
+const FROGTUNE_GAME_ID = 'roulette' as const
+const frogtuneTxn = { frogtuneGameId: FROGTUNE_GAME_ID }
+
 export function useRouletteGame() {
   const { spendTadpoles, addTadpoles, wallet } = useWallet()
   const [state, dispatch] = useReducer(rouletteReducer, undefined, createInitialState)
@@ -48,7 +51,7 @@ export function useRouletteGame() {
     if (current.pendingBets.length === 0) return false
 
     const wager = totalWager(current)
-    const spent = await spendTadpoles(wager)
+    const spent = await spendTadpoles(wager, frogtuneTxn)
     if (!spent) return false
 
     const result = spinPocket()
@@ -66,7 +69,7 @@ export function useRouletteGame() {
     const totalPayout =
       current.betOutcomes?.reduce((sum, o) => sum + o.payout, 0) ?? 0
     if (totalPayout > 0) {
-      await addTadpoles(totalPayout)
+      await addTadpoles(totalPayout, frogtuneTxn)
     }
 
     dispatch({ type: 'complete_round' })

@@ -47,8 +47,8 @@ export function WalletProvider({
   }, [service])
 
   const addTadpoles = useCallback(
-    async (amount: number) => {
-      const nextWallet = await service.addTadpoles(amount)
+    async (amount: number, options?: Parameters<WalletService['addTadpoles']>[1]) => {
+      const nextWallet = await service.addTadpoles(amount, options)
       setWallet(nextWallet)
       return nextWallet
     },
@@ -56,8 +56,8 @@ export function WalletProvider({
   )
 
   const spendTadpoles = useCallback(
-    async (amount: number) => {
-      const nextWallet = await service.spendTadpoles(amount)
+    async (amount: number, options?: Parameters<WalletService['spendTadpoles']>[1]) => {
+      const nextWallet = await service.spendTadpoles(amount, options)
       if (nextWallet) setWallet(nextWallet)
       return nextWallet
     },

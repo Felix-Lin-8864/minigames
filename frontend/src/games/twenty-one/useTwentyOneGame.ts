@@ -11,6 +11,9 @@ import {
 import { MIN_BET, MIN_PAIR_BET } from './constants'
 import type { TwentyOneSnapshot } from './types'
 
+const FROGTUNE_GAME_ID = 'twenty-one' as const
+const frogtuneTxn = { frogtuneGameId: FROGTUNE_GAME_ID }
+
 export function useTwentyOneGame() {
   const { spendTadpoles, addTadpoles, wallet } = useWallet()
   const [state, dispatch] = useReducer(twentyOneReducer, undefined, createInitialState)
@@ -33,7 +36,7 @@ export function useTwentyOneGame() {
     if (pairBet > 0 && (!Number.isFinite(pairBet) || pairBet < MIN_PAIR_BET)) return false
 
     const totalSpend = bet + pairBet
-    const spent = await spendTadpoles(totalSpend)
+    const spent = await spendTadpoles(totalSpend, frogtuneTxn)
     if (!spent) return false
 
     dispatch({ type: 'deal', bet, pairBet })
@@ -45,7 +48,7 @@ export function useTwentyOneGame() {
     if (current.phase !== 'pair_reveal') return
 
     if (current.pairBetPayout > 0) {
-      await addTadpoles(current.pairBetPayout)
+      await addTadpoles(current.pairBetPayout, frogtuneTxn)
     }
 
     dispatch({ type: 'continue_after_pair' })
@@ -55,7 +58,7 @@ export function useTwentyOneGame() {
     async (snapshot: TwentyOneSnapshot) => {
       const totalPayout = snapshot.playerHands.reduce((sum, hand) => sum + hand.payout, 0)
       if (totalPayout > 0) {
-        await addTadpoles(totalPayout)
+        await addTadpoles(totalPayout, frogtuneTxn)
       }
     },
     [addTadpoles],
@@ -81,7 +84,7 @@ export function useTwentyOneGame() {
 
     dispatch({ type: 'double', additionalBet })
 
-    const spent = await spendTadpoles(additionalBet)
+    const spent = await spendTadpoles(additionalBet, frogtuneTxn)
     return spent != null
   }, [spendTadpoles, wallet.balance])
 
@@ -93,7 +96,7 @@ export function useTwentyOneGame() {
     if (!hand || !canSplitHand(current, hand)) return false
 
     const additionalBet = hand.bet
-    const spent = await spendTadpoles(additionalBet)
+    const spent = await spendTadpoles(additionalBet, frogtuneTxn)
     if (!spent) return false
 
     dispatch({ type: 'split', additionalBet })

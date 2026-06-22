@@ -25,16 +25,13 @@ export function tadpolesEarnedForGame(
   switch (gameId) {
     case 'snake':
     case 'frogger':
+      return safeScore / 2
     case 'stacker':
       return safeScore / 4
     case 'anagrams': {
       const duration = context?.duration ?? 60
-      const divisor = 100 + duration * 10
-      let earned = Math.ceil(safeScore / divisor)
-      if (context?.mode === 'reps') {
-        earned = Math.floor(earned / 2)
-      }
-      return earned
+      const units = Math.ceil(safeScore / (duration * 10))
+      return context?.mode === 'reps' ? units : units * 2
     }
   }
 }

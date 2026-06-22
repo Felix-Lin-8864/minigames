@@ -12,10 +12,9 @@ interface TadpoleRewardsInfoDialogProps {
 interface FormulaSectionProps {
   title: string
   formula: string
-  description: string
 }
 
-function FormulaSection({ title, formula, description }: FormulaSectionProps) {
+function FormulaSection({ title, formula }: FormulaSectionProps) {
   return (
     <Stack spacing={0.75}>
       <Typography variant="subtitle2">{title}</Typography>
@@ -32,9 +31,6 @@ function FormulaSection({ title, formula, description }: FormulaSectionProps) {
       >
         {formula}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
-      </Typography>
     </Stack>
   )
 }
@@ -46,19 +42,20 @@ export function TadpoleRewardsInfoDialog({ open, onClose }: TadpoleRewardsInfoDi
       <DialogContent>
         <Stack spacing={2.5} sx={{ pb: 1 }}>
           <FormulaSection
-            title="General"
+            title="Snake & Frogger"
+            formula="tadpoles = points ÷ 2"
+          />
+          <FormulaSection
+            title="Stacker"
             formula="tadpoles = points ÷ 4"
-            description="Applies to Snake, Frogger, and Stacker."
           />
           <FormulaSection
             title="Anagrams"
-            formula="tadpoles = ceil(points ÷ (100 + duration × 10))"
-            description="Duration is the selected time limit in seconds (30, 60, or 90)."
+            formula="tadpoles = 2 × ceil(points ÷ (duration × 10))"
           />
           <FormulaSection
             title="Anagrams (reps)"
-            formula="tadpoles = floor(Anagrams award ÷ 2)"
-            description="Uses the Anagrams formula above, then halves the result."
+            formula="tadpoles = ceil(points ÷ (duration × 10))"
           />
         </Stack>
       </DialogContent>

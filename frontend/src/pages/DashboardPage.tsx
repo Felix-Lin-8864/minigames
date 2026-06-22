@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { DashboardHero } from '../components/dashboard/DashboardHero'
 import { GameLaunchCard } from '../components/dashboard/GameLaunchCard'
 import { StatCard } from '../components/dashboard/StatCard'
+import { FrogtuneNetDialog } from '../components/dashboard/FrogtuneNetDialog'
 import { TadpoleRewardsInfoDialog } from '../components/dashboard/TadpoleRewardsInfoDialog'
 import { WalletCard } from '../components/dashboard/WalletCard'
 import { frogtuneGames, miniGames } from '../games/registry'
@@ -15,6 +16,7 @@ import { useStats } from '../stats/useStats'
 export function DashboardPage() {
   const { stats, loading } = useStats()
   const [rewardsInfoOpen, setRewardsInfoOpen] = useState(false)
+  const [frogtuneNetOpen, setFrogtuneNetOpen] = useState(false)
 
   const hasAnyRecords = miniGames.some((game) => {
     const gameStats = stats[game.id]
@@ -61,7 +63,16 @@ export function DashboardPage() {
 
       {frogtuneGames.length > 0 && (
         <Stack spacing={2}>
-          <Typography variant="h6">Frogtune</Typography>
+          <Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}>
+            <Typography variant="h6">Frogtune</Typography>
+            <IconButton
+              size="small"
+              aria-label="Frogtune net winnings"
+              onClick={() => setFrogtuneNetOpen(true)}
+            >
+              <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Stack>
           <Grid container spacing={3}>
             {frogtuneGames.map((game) => (
               <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -69,6 +80,10 @@ export function DashboardPage() {
               </Grid>
             ))}
           </Grid>
+          <FrogtuneNetDialog
+            open={frogtuneNetOpen}
+            onClose={() => setFrogtuneNetOpen(false)}
+          />
         </Stack>
       )}
     </Stack>

@@ -1,4 +1,5 @@
-import type { WalletService } from './WalletService'
+import type { WalletService, TadpoleTransactionOptions } from './WalletService'
+import { adjustFrogtuneNet } from './frogtuneNet'
 import { normalizeTadpoles } from './tadpoleAmount'
 import { createEmptyWallet, type Wallet } from './types'
 
@@ -10,10 +11,17 @@ function normalizeWallet(parsed: Partial<Wallet>): Wallet {
     balance,
     Math.max(0, normalizeTadpoles(parsed.allTimeHigh ?? balance)),
   )
+  const frogtuneNet = Object.fromEntries(
+    Object.entries(parsed.frogtuneNet ?? {}).map(([gameId, net]) => [
+      gameId,
+      normalizeTadpoles(net),
+    ]),
+  )
 
   return {
     balance,
     allTimeHigh,
+    frogtuneNet,
     lastUpdatedAt: parsed.lastUpdatedAt ?? null,
   }
 }
@@ -37,7 +45,7 @@ export const localStorageWalletService: WalletService = {
     return readWallet()
   },
 
-  async addTadpoles(amount) {
+  async addTadpoles(amount, options) {
     const earned = normalizeTadpoles(Math.max(0, amount))
     if (earned === 0) return readWallet()
 
@@ -46,13 +54,16 @@ export const localStorageWalletService: WalletService = {
     const next: Wallet = {
       balance,
       allTimeHigh: Math.max(wallet.allTimeHigh, balance),
+      frogtuneNet: options?.frogtuneGameId
+        ? adjustFrogtuneNet(wallet.frogtuneNet, options.frogtuneGameId, earned)
+        : wallet.frogtuneNet,
       lastUpdatedAt: new Date().toISOString(),
     }
     writeWallet(next)
     return next
   },
 
-  async spendTadpoles(amount) {
+  async spendTadpoles(amount, options) {
     const cost = normalizeTadpoles(Math.max(0, amount))
     if (cost === 0) return readWallet()
 
@@ -62,6 +73,9 @@ export const localStorageWalletService: WalletService = {
     const next: Wallet = {
       balance: wallet.balance - cost,
       allTimeHigh: wallet.allTimeHigh,
+      frogtuneNet: options?.frogtuneGameId
+        ? adjustFrogtuneNet(wallet.frogtuneNet, options.frogtuneGameId, -cost)
+        : wallet.frogtuneNet,
       lastUpdatedAt: new Date().toISOString(),
     }
     writeWallet(next)

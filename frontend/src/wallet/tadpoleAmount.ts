@@ -22,3 +22,11 @@ export function formatTadpolesFixed(amount: number, decimals = 2): string {
     maximumFractionDigits: decimals,
   })
 }
+
+export function formatSignedTadpolesFixed(amount: number, decimals = 2): string {
+  const normalized = normalizeTadpoles(amount)
+  const formatted = formatTadpolesFixed(Math.abs(normalized), decimals)
+  if (normalized > 0) return `+${formatted}`
+  if (normalized < 0) return `-${formatted}`
+  return formatted
+}

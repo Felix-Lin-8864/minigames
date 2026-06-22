@@ -10,6 +10,9 @@ import {
   toSnapshot,
 } from './gameLogic'
 
+const FROGTUNE_GAME_ID = 'slots' as const
+const frogtuneTxn = { frogtuneGameId: FROGTUNE_GAME_ID }
+
 export function useSlotsGame() {
   const { spendTadpoles, addTadpoles, wallet } = useWallet()
   const [state, dispatch] = useReducer(slotsReducer, undefined, createInitialState)
@@ -27,7 +30,7 @@ export function useSlotsGame() {
     if (!Number.isFinite(bet) || bet < MIN_BET) return false
     if (wallet.balance < bet) return false
 
-    const spent = await spendTadpoles(bet)
+    const spent = await spendTadpoles(bet, frogtuneTxn)
     if (!spent) return false
 
     const reels = spinReels(DEFAULT_CONFIG)
@@ -54,7 +57,7 @@ export function useSlotsGame() {
     if (current.phase !== 'spinning') return
 
     if (current.payout > 0) {
-      await addTadpoles(current.payout)
+      await addTadpoles(current.payout, frogtuneTxn)
     }
 
     dispatch({ type: 'complete_spin' })
