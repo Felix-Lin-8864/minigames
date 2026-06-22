@@ -5,6 +5,7 @@ import { SnakeIcon } from '../components/icons/SnakeIcon'
 import { StackerIcon } from '../components/icons/StackerIcon'
 import { TwentyOneIcon } from '../components/icons/TwentyOneIcon'
 import { RouletteIcon } from '../components/icons/RouletteIcon'
+import { SlotsIcon } from '../components/icons/SlotsIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -71,6 +72,15 @@ export const gameMetadata: GameMetadata[] = [
     description: 'European single-zero roulette — place chips on the table and spin for tadpoles.',
     route: '/games/roulette',
     icon: RouletteIcon as ElementType,
+    category: 'frogtune',
+    statFields: [],
+  },
+  {
+    id: 'slots',
+    name: 'Slots',
+    description: 'Three-reel slots — match symbols on the payline to multiply your tadpole bet.',
+    route: '/games/slots',
+    icon: SlotsIcon as ElementType,
     category: 'frogtune',
     statFields: [],
   },
