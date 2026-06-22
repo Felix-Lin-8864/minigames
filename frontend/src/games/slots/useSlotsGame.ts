@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef, useState } from 'react'
+import { useCallback, useReducer, useRef } from 'react'
 import { useWallet } from '../../wallet/useWallet'
 import { MIN_BET } from './constants'
 import {
@@ -9,16 +9,10 @@ import {
   spinReels,
   toSnapshot,
 } from './gameLogic'
-import {
-  createEmptySessionStats,
-  recordSpin,
-  type SlotsSessionStats,
-} from './sessionStats'
 
 export function useSlotsGame() {
   const { spendTadpoles, addTadpoles, wallet } = useWallet()
   const [state, dispatch] = useReducer(slotsReducer, undefined, createInitialState)
-  const [sessionStats, setSessionStats] = useState<SlotsSessionStats>(createEmptySessionStats)
   const stateRef = useRef(state)
 
   stateRef.current = state
@@ -63,7 +57,6 @@ export function useSlotsGame() {
       await addTadpoles(current.payout)
     }
 
-    setSessionStats((stats) => recordSpin(stats, current.bet, current.payout))
     dispatch({ type: 'complete_spin' })
   }, [addTadpoles])
 
@@ -72,7 +65,6 @@ export function useSlotsGame() {
   return {
     snapshot,
     wallet,
-    sessionStats,
     setBet,
     spin,
     completeSpin,

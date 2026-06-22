@@ -1,14 +1,5 @@
 import type { SlotSymbol } from './types'
-
-export const SYMBOL_EMOJI: Record<SlotSymbol, string> = {
-  fly: '🪰',
-  reed: '🌿',
-  droplet: '💧',
-  lilypad: '🌸',
-  caterpillar: '🐛',
-  egg: '🥚',
-  goldenfrog: '🐸',
-}
+import { SLOT_SYMBOL_COLORS, SLOT_SYMBOL_ICONS } from './slotSymbolIcons'
 
 export const SYMBOL_LABELS: Record<SlotSymbol, string> = {
   fly: 'Fly',
@@ -19,3 +10,5 @@ export const SYMBOL_LABELS: Record<SlotSymbol, string> = {
   egg: 'Frog Egg',
   goldenfrog: 'Golden Frog',
 }
+
+export { SLOT_SYMBOL_ICONS, SLOT_SYMBOL_COLORS }

@@ -17,7 +17,7 @@ import { readPanelPreferences, writePanelPreferences } from './panelPreferences'
 import { StatPanel } from './StatPanel'
 import { SlotSymbolIcon } from './SlotSymbolIcon'
 import { SYMBOL_LABELS } from './symbols'
-import type { SlotSymbol } from './types'
+import type { SlotSymbol, SlotsSnapshot } from './types'
 import { useSlotsGame } from './useSlotsGame'
 
 const DEFAULT_DISPLAY: [SlotSymbol, SlotSymbol, SlotSymbol] = ['fly', 'reed', 'droplet']
@@ -103,8 +103,31 @@ function PayoutTable() {
   )
 }
 
+function resolveStatusBanner(
+  snapshot: SlotsSnapshot,
+  isSpinning: boolean,
+  insufficientBalance: boolean,
+): { severity: 'success' | 'info' | 'warning'; message: string } {
+  if (insufficientBalance) {
+    return {
+      severity: 'warning',
+      message: `Not enough tadpoles — minimum bet is ${MIN_BET}.`,
+    }
+  }
+  if (isSpinning) {
+    return { severity: 'info', message: 'Spinning…' }
+  }
+  if (snapshot.phase === 'revealed' && snapshot.message) {
+    return {
+      severity: snapshot.multiplier > 0 ? 'success' : 'info',
+      message: snapshot.message,
+    }
+  }
+  return { severity: 'info', message: 'Ready to spin.' }
+}
+
 export function SlotsGame() {
-  const { snapshot, wallet, sessionStats, setBet, spin, completeSpin, canSpin, isSpinning } =
+  const { snapshot, wallet, setBet, spin, completeSpin, canSpin, isSpinning } =
     useSlotsGame()
   const [panels, setPanels] = useState(readPanelPreferences)
   const [betInput, setBetInput] = useState(String(MIN_BET))
@@ -167,6 +190,7 @@ export function SlotsGame() {
   const parsedBet = parseBetInput(betInput)
   const betTooLow = parsedBet === null
   const spinDisabled = !canSpin || isSpinning || betTooLow || insufficientBalance
+  const statusBanner = resolveStatusBanner(snapshot, isSpinning, insufficientBalance)
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -191,7 +215,7 @@ export function SlotsGame() {
         spacing={2}
         sx={{ alignItems: { xs: 'center', lg: 'flex-start' }, justifyContent: 'center' }}
       >
-        {panels.showStatPanel && <StatPanel session={sessionStats} />}
+        {panels.showStatPanel && <StatPanel />}
 
         <Stack spacing={2} sx={{ width: '100%', maxWidth: 640, alignItems: 'center' }}>
           <TadpoleStack amount={wallet.balance} />
@@ -241,14 +265,18 @@ export function SlotsGame() {
               </Stack>
             </Box>
 
-            {snapshot.phase === 'revealed' && snapshot.message && (
-              <Alert
-                severity={snapshot.multiplier > 0 ? 'success' : 'info'}
-                sx={{ width: '100%' }}
-              >
-                {snapshot.message}
-              </Alert>
-            )}
+            <Alert
+              severity={statusBanner.severity}
+              sx={{
+                width: '100%',
+                minHeight: 52,
+                display: 'flex',
+                alignItems: 'center',
+                '& .MuiAlert-message': { width: '100%' },
+              }}
+            >
+              {statusBanner.message}
+            </Alert>
 
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
@@ -273,12 +301,6 @@ export function SlotsGame() {
                 {isSpinning ? 'Spinning…' : 'Spin'}
               </Button>
             </Stack>
-
-            {insufficientBalance && (
-              <Alert severity="warning" sx={{ width: '100%' }}>
-                Not enough tadpoles — minimum bet is {MIN_BET}.
-              </Alert>
-            )}
           </Stack>
         </Paper>
 
