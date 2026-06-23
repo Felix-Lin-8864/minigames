@@ -1,4 +1,4 @@
-import type { WalletService, TadpoleTransactionOptions } from './WalletService'
+import type { WalletService } from './WalletService'
 import { adjustFrogtuneNet } from './frogtuneNet'
 import { normalizeTadpoles } from './tadpoleAmount'
 import { createEmptyWallet, type Wallet } from './types'
