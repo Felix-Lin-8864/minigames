@@ -1,8 +1,9 @@
-/** Number of standard 52-card decks in the shoe. */
-export const DECK_COUNT = 6
-
-/** Total cards per shoe era (6 × 52). */
-export const SHOE_SIZE = DECK_COUNT * 52
+export {
+  DECK_COUNT,
+  SHOE_SIZE,
+  SUITS,
+  RANKS,
+} from '../cards/constants'
 
 /** Reshuffle after this many completed hands. */
 export const HANDS_PER_SHOE = 5
@@ -54,21 +55,3 @@ export const PER_DECK_VALUE_COUNTS: Record<CardValueKey, number> = {
   '9': 4,
   '10': 16,
 }
-
-export const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
-
-export const RANKS = [
-  'A',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  '10',
-  'J',
-  'Q',
-  'K',
-] as const

@@ -1,4 +1,4 @@
-import { RANKS, SUITS } from './constants'
+import { RANKS, SUITS } from '../cards/constants'
 import { isRedSuit } from './cards'
 import type { Card, Rank, Suit } from './types'
 

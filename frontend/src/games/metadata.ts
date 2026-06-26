@@ -8,6 +8,7 @@ import { RouletteIcon } from '../components/icons/RouletteIcon'
 import { SlotsIcon } from '../components/icons/SlotsIcon'
 import { PlinkoIcon } from '../components/icons/PlinkoIcon'
 import { FroggiesIcon } from '../components/icons/FroggiesIcon'
+import { BaccaratIcon } from '../components/icons/BaccaratIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -101,6 +102,15 @@ export const gameMetadata: GameMetadata[] = [
     description: 'Five coloured frogs race along the track — bet on the exact finishing order.',
     route: '/games/froggies',
     icon: FroggiesIcon as ElementType,
+    category: 'frogtune',
+    statFields: [],
+  },
+  {
+    id: 'baccarat',
+    name: 'Baccarat',
+    description: 'Punto banco Baccarat — bet Player, Banker, or Tie from a six-deck shoe.',
+    route: '/games/baccarat',
+    icon: BaccaratIcon as ElementType,
     category: 'frogtune',
     statFields: [],
   },

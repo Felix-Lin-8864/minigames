@@ -1,7 +1,6 @@
 import {
   CARD_VALUE_KEYS,
   HANDS_PER_SHOE,
-  SHOE_SIZE,
   type CardValueKey,
 } from './constants'
 import {
@@ -12,9 +11,14 @@ import {
 } from './cards'
 import { getPairBetProbabilities } from './pairBet'
 import { shuffleShoePool } from './shuffle'
+import {
+  assertShoeIntegrity as assertBaseShoeIntegrity,
+  didShoeJustReshuffle,
+} from '../cards/shoe'
 import type { Card, ShoeState } from './types'
 
 export type { ShoeState } from './types'
+export { didShoeJustReshuffle }
 
 export function createShoe(random?: () => number): ShoeState {
   const queue = shuffleShoePool(random)
@@ -117,7 +121,6 @@ export function completeHand(
   if (handsCompleted >= HANDS_PER_SHOE) {
     return { shoe: createShoe(random), reshuffled: true }
   }
-  // Preserve the full shoe era (discard pile, counts, queue) — only advance the hand counter.
   syncRunningCount(shoe)
   return {
     shoe: {
@@ -130,14 +133,6 @@ export function completeHand(
     },
     reshuffled: false,
   }
-}
-
-/** True when a completed shoe era just ended and a fresh queue replaced the discard pile. */
-export function didShoeJustReshuffle(
-  previousDiscardCount: number | null,
-  nextDiscardCount: number,
-): boolean {
-  return previousDiscardCount !== null && previousDiscardCount > 0 && nextDiscardCount === 0
 }
 
 export function shoeSnapshot(shoe: ShoeState) {
@@ -156,9 +151,5 @@ export function shoeSnapshot(shoe: ShoeState) {
 }
 
 export function assertShoeIntegrity(shoe: ShoeState): void {
-  const inQueue = shoe.queue.length
-  const inDiscard = shoe.discardPile.length
-  if (inQueue + inDiscard !== SHOE_SIZE) {
-    throw new Error(`Shoe card count mismatch: ${inQueue + inDiscard} !== ${SHOE_SIZE}`)
-  }
+  assertBaseShoeIntegrity(shoe)
 }

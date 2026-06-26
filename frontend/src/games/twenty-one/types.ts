@@ -1,15 +1,8 @@
 import type { CardValueKey } from './constants'
-import type { SUITS, RANKS } from './constants'
+import type { Card } from '../cards/types'
 import type { PairResult, PairTierProbabilities, RemainingBySuitRank } from './pairBet'
 
-export type Suit = (typeof SUITS)[number]
-export type Rank = (typeof RANKS)[number]
-
-export interface Card {
-  suit: Suit
-  rank: Rank
-  faceUp: boolean
-}
+export type { Card, Rank, Suit } from '../cards/types'
 
 export type OptimalMove = 'hit' | 'stand' | 'double' | 'split'
 

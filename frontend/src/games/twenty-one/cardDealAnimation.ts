@@ -1,7 +1,6 @@
-import type { Card, TwentyOneSnapshot } from './types'
+export { CARD_DEAL_DELAY_MS, CARD_DEAL_DURATION_MS } from '../cards/dealAnimation'
 
-export const CARD_DEAL_DELAY_MS = 500
-export const CARD_DEAL_DURATION_MS = 420
+import type { Card, TwentyOneSnapshot } from './types'
 
 export function collectSnapshotCards(snapshot: TwentyOneSnapshot): Card[] {
   return [
