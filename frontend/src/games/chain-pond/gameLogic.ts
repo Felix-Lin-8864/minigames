@@ -1,5 +1,7 @@
 import { LETTER_WEIGHTS, RARE_LETTERS, type Letter } from '../anagrams/generateLetters'
 import {
+  MAX_WORD_LENGTH,
+  MIN_WORD_LENGTH,
   MAX_LENGTH_REROLLS,
   TURN_TIMER_SECONDS,
   VALID_WORD_LENGTHS,
@@ -72,7 +74,7 @@ export function hasValidWord(
 }
 
 function randomWordLength(random: () => number): WordLength {
-  return randomInt(4, 11, random) as WordLength
+  return randomInt(MIN_WORD_LENGTH, MAX_WORD_LENGTH, random) as WordLength
 }
 
 export function resolveFeasibleTurn(
@@ -206,13 +208,6 @@ export function endChain(state: ChainPondState, reason: EndReason): ChainPondSta
   }
 }
 
-export function applyInvalidSubmission(state: ChainPondState): ChainPondState {
-  return {
-    ...state,
-    score: state.score - 1,
-  }
-}
-
 export function tickTimer(state: ChainPondState, deltaSeconds: number): ChainPondState {
   if (state.status !== 'playing') return state
 
@@ -255,7 +250,7 @@ export function partitionChainPondWords(dictionary: Iterable<string>): WordsByLe
   for (const word of dictionary) {
     const upper = word.toUpperCase()
     const len = upper.length
-    if (len >= 4 && len <= 11) {
+    if (len >= MIN_WORD_LENGTH && len <= MAX_WORD_LENGTH) {
       result[len]?.add(upper)
     }
   }
@@ -269,11 +264,9 @@ export type ChainPondAction =
   | { type: 'submit'; word: string; wordsByLength: WordsByLength; random?: () => number }
   | { type: 'tick'; deltaSeconds: number }
   | { type: 'clear_invalid_message' }
-  | { type: 'clear_penalty_flash' }
 
 export interface ChainPondReducerState extends ChainPondState {
   invalidMessage: string | null
-  showPenaltyFlash: boolean
 }
 
 export function createIdleState(): ChainPondReducerState {
@@ -282,7 +275,7 @@ export function createIdleState(): ChainPondReducerState {
     usedWords: new Set(),
     currentTurn: {
       startLetter: 'A',
-      requiredLength: 4,
+      requiredLength: MIN_WORD_LENGTH,
       timeRemaining: TURN_TIMER_SECONDS,
     },
     score: 0,
@@ -290,7 +283,6 @@ export function createIdleState(): ChainPondReducerState {
     status: 'idle',
     endReason: null,
     invalidMessage: null,
-    showPenaltyFlash: false,
   }
 }
 
@@ -305,7 +297,6 @@ export function chainPondReducer(
       return {
         ...next,
         invalidMessage: null,
-        showPenaltyFlash: false,
       }
     }
 
@@ -323,7 +314,6 @@ export function chainPondReducer(
         return {
           ...endChain(state, result.reason),
           invalidMessage: 'Word already used in this chain',
-          showPenaltyFlash: false,
         }
       }
 
@@ -335,9 +325,8 @@ export function chainPondReducer(
         } as const
 
         return {
-          ...applyInvalidSubmission(state),
+          ...state,
           invalidMessage: messages[result.reason],
-          showPenaltyFlash: true,
         }
       }
 
@@ -345,7 +334,6 @@ export function chainPondReducer(
       return {
         ...advanced,
         invalidMessage: null,
-        showPenaltyFlash: false,
       }
     }
 
@@ -357,9 +345,6 @@ export function chainPondReducer(
 
     case 'clear_invalid_message':
       return { ...state, invalidMessage: null }
-
-    case 'clear_penalty_flash':
-      return { ...state, showPenaltyFlash: false }
 
     default:
       return state

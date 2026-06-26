@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useWordDictionary } from '../../dictionary/useWordDictionary'
-import { INVALID_MESSAGE_DURATION_MS, PENALTY_FLASH_DURATION_MS } from './constants'
+import { INVALID_MESSAGE_DURATION_MS } from './constants'
 import {
   chainPondReducer,
   createIdleState,
@@ -62,22 +62,11 @@ export function useChainPondGame() {
     return () => window.clearTimeout(timeoutId)
   }, [state.invalidMessage])
 
-  useEffect(() => {
-    if (!state.showPenaltyFlash) return
-
-    const timeoutId = window.setTimeout(() => {
-      dispatch({ type: 'clear_penalty_flash' })
-    }, PENALTY_FLASH_DURATION_MS)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [state.showPenaltyFlash])
-
   const snapshot: ChainPondSnapshot = toSnapshot(state)
 
   return {
     snapshot,
     invalidMessage: state.invalidMessage,
-    showPenaltyFlash: state.showPenaltyFlash,
     dictionaryReady: !loading && wordsByLength != null,
     start,
     playAgain,

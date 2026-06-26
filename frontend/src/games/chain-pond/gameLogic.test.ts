@@ -11,7 +11,7 @@ import {
   resolveFeasibleTurn,
   validateSubmission,
 } from './gameLogic'
-import type { ChainPondState } from './types'
+import type { ChainPondState, TurnState } from './types'
 
 function makeWordsByLength(entries: Record<number, string[]>): Record<number, Set<string>> {
   const result: Record<number, Set<string>> = {}
@@ -22,10 +22,14 @@ function makeWordsByLength(entries: Record<number, string[]>): Record<number, Se
 }
 
 const SAMPLE_WORDS = makeWordsByLength({
+  3: ['TAB', 'EAT', 'NET', 'THE'],
   4: ['ABLE', 'ECHO', 'OPEN', 'NEAT'],
   5: ['TABLE', 'EAGLE', 'NORTH'],
   6: ['TANGLE', 'EAGLES'],
 })
+
+/** Picks word length 4 from randomInt(3, 9, random). */
+const randomLengthFour = () => 0.15
 
 describe('hasValidWord', () => {
   it('returns true when a matching unused word exists', () => {
@@ -54,7 +58,7 @@ describe('drawRequiredLength', () => {
 
   it('advances the starting letter when no length is feasible', () => {
     const sparse = makeWordsByLength({ 4: ['NEAT'] })
-    const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const random = vi.spyOn(Math, 'random').mockImplementation(randomLengthFour)
 
     const turn = resolveFeasibleTurn('Z', sparse, new Set())
     expect(turn.startLetter).toBe('N')
@@ -115,11 +119,11 @@ describe('calculateFinalTadpoles', () => {
 describe('advanceTurn', () => {
   it('extends the chain and draws a feasible next turn', () => {
     const state: ChainPondState = {
-      ...createInitialState(SAMPLE_WORDS, () => 0),
-      currentTurn: createTurnState('T', SAMPLE_WORDS, new Set(), () => 0),
+      ...createInitialState(SAMPLE_WORDS, randomLengthFour),
+      currentTurn: createTurnState('T', SAMPLE_WORDS, new Set(), randomLengthFour),
     }
 
-    const next = advanceTurn(state, 'TABLE', SAMPLE_WORDS, () => 0)
+    const next = advanceTurn(state, 'TABLE', SAMPLE_WORDS, randomLengthFour)
 
     expect(next.chain).toEqual(['TABLE'])
     expect(next.usedWords.has('TABLE')).toBe(true)
@@ -133,18 +137,19 @@ describe('advanceTurn', () => {
 })
 
 describe('partitionChainPondWords', () => {
-  it('keeps only lengths 4 through 11', () => {
-    const partitioned = partitionChainPondWords(['cat', 'frog', 'pond', 'a'.repeat(12)])
+  it('keeps only lengths 3 through 9', () => {
+    const partitioned = partitionChainPondWords(['at', 'cat', 'frog', 'pond', 'a'.repeat(10)])
 
-    expect(partitioned[3]).toBeUndefined()
+    expect(partitioned[2]).toBeUndefined()
+    expect(partitioned[3]?.has('CAT')).toBe(true)
     expect(partitioned[4]?.has('FROG')).toBe(true)
     expect(partitioned[4]?.has('POND')).toBe(true)
-    expect(partitioned[12]).toBeUndefined()
+    expect(partitioned[10]).toBeUndefined()
   })
 })
 
 describe('invalid submission scoring', () => {
-  it('decrements score by 1 for each invalid reason', () => {
+  it('does not change score for invalid guesses', () => {
     const wordsByLength = SAMPLE_WORDS
     let state = {
       ...createIdleState(),
@@ -157,8 +162,7 @@ describe('invalid submission scoring', () => {
     for (const word of ['EAGLE', 'TABLET', 'TZZZZ']) {
       state = chainPondReducer(state, { type: 'submit', word, wordsByLength })
       expect(state.status).toBe('playing')
+      expect(state.score).toBe(3)
     }
-
-    expect(state.score).toBe(0)
   })
 })

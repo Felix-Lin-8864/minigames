@@ -45,7 +45,6 @@ export function ChainPondGame() {
   const {
     snapshot,
     invalidMessage,
-    showPenaltyFlash,
     dictionaryReady,
     start,
     playAgain,
@@ -118,34 +117,13 @@ export function ChainPondGame() {
   return (
     <Stack spacing={3} sx={{ alignItems: 'center', width: '100%', maxWidth: 560 }}>
       <Stack direction="row" spacing={3} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Box sx={{ position: 'relative' }}>
+        <Box>
           <Typography variant="caption" color="text.secondary">
             Score
           </Typography>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: '"Fredoka", sans-serif',
-              color: snapshot.score < 0 ? 'error.main' : 'text.primary',
-            }}
-          >
+          <Typography variant="h5" sx={{ fontFamily: '"Fredoka", sans-serif' }}>
             {isIdle ? '—' : snapshot.score}
           </Typography>
-          {showPenaltyFlash && (
-            <Typography
-              variant="caption"
-              sx={{
-                position: 'absolute',
-                top: -4,
-                right: -20,
-                color: 'error.main',
-                fontWeight: 700,
-                animation: `${shake} 0.4s ease`,
-              }}
-            >
-              −1
-            </Typography>
-          )}
         </Box>
         <Box>
           <Typography variant="caption" color="text.secondary">
@@ -410,7 +388,7 @@ export function ChainPondGame() {
       </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-        Valid words earn +1 point. Invalid guesses cost 1 point. Tadpoles = score.
+        Valid words earn +1 point. Tadpoles = score.
       </Typography>
 
       <TadpoleEarnedSnackbar
