@@ -7,7 +7,7 @@ export function AppLayout() {
   return (
     <>
       <TopAppBar />
-      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, md: 5 } }}>
         <Box component="main">
           <Outlet />
         </Box>

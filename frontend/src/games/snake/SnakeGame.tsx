@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { DirectionalPad } from '../../components/DirectionalPad'
 import { SnakeCanvas } from './SnakeCanvas'
 import { useSnakeGame } from './useSnakeGame'
 import { useStats } from '../../stats/useStats'
@@ -89,6 +90,15 @@ export function SnakeGame() {
         <SnakeCanvas snapshot={snapshot} />
       </Paper>
 
+      {snapshot.status === 'playing' && (
+        <DirectionalPad
+          onUp={() => setDirection('up')}
+          onDown={() => setDirection('down')}
+          onLeft={() => setDirection('left')}
+          onRight={() => setDirection('right')}
+        />
+      )}
+
       <Stack
         direction="row"
         spacing={1.5}
@@ -114,20 +124,6 @@ export function SnakeGame() {
         Every 10 points the map reshuffles.<br/>
       </Typography>
 
-      <Stack direction="row" spacing={1} sx={{ display: { md: 'none' } }}>
-        <Button variant="outlined" size="small" onClick={() => setDirection('up')}>
-          Up
-        </Button>
-        <Button variant="outlined" size="small" onClick={() => setDirection('down')}>
-          Down
-        </Button>
-        <Button variant="outlined" size="small" onClick={() => setDirection('left')}>
-          Left
-        </Button>
-        <Button variant="outlined" size="small" onClick={() => setDirection('right')}>
-          Right
-        </Button>
-      </Stack>
       <TadpoleEarnedSnackbar
         open={showEarnedNotification}
         amount={earnedAmount ?? 0}

@@ -377,18 +377,22 @@ export function AnagramsGame() {
             <LetterTiles letters={snapshot.letters} />
 
             {isPlaying && (
-              <Box component="form" onSubmit={handleSubmit}>
+              <Box component="form" onSubmit={handleSubmit} autoComplete="off">
                 <TextField
                   inputRef={inputRef}
                   fullWidth
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   placeholder="Type a word and press Enter"
-                  autoComplete="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
+                  name="anagram-word"
                   size="small"
                   slotProps={{
+                    htmlInput: {
+                      autoComplete: 'off',
+                      autoCorrect: 'off',
+                      autoCapitalize: 'off',
+                      spellCheck: 'false',
+                    },
                     input: {
                       sx: { fontFamily: '"Fredoka", sans-serif', letterSpacing: '0.04em' },
                     },

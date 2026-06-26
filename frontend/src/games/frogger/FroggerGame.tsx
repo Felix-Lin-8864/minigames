@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { DirectionalPad } from '../../components/DirectionalPad'
 import { FroggerCanvas } from './FroggerCanvas'
 import { tilesForward } from './gameLogic'
 import { useFroggerGame } from './useFroggerGame'
@@ -91,6 +92,15 @@ export function FroggerGame() {
         <FroggerCanvas snapshot={snapshot} />
       </Paper>
 
+      {snapshot.status === 'playing' && (
+        <DirectionalPad
+          onUp={() => move(0, -1)}
+          onDown={() => move(0, 1)}
+          onLeft={() => move(-1, 0)}
+          onRight={() => move(1, 0)}
+        />
+      )}
+
       <Stack
         direction="row"
         spacing={1.5}
@@ -112,24 +122,10 @@ export function FroggerGame() {
       </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-        Arrow keys or WASD to hop forward endlessly. Ride logs, avoid traffic, and see how
+        Arrow keys, WASD, or the D-pad to hop forward endlessly. Ride logs, avoid traffic, and see how
         far you can go.
       </Typography>
 
-      <Stack direction="row" spacing={1} sx={{ display: { md: 'none' } }}>
-        <Button variant="outlined" size="small" onClick={() => move(0, -1)}>
-          Up
-        </Button>
-        <Button variant="outlined" size="small" onClick={() => move(0, 1)}>
-          Down
-        </Button>
-        <Button variant="outlined" size="small" onClick={() => move(-1, 0)}>
-          Left
-        </Button>
-        <Button variant="outlined" size="small" onClick={() => move(1, 0)}>
-          Right
-        </Button>
-      </Stack>
       <TadpoleEarnedSnackbar
         open={showEarnedNotification}
         amount={earnedAmount ?? 0}

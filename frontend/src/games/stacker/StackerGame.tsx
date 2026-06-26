@@ -101,6 +101,22 @@ export function StackerGame() {
         <StackerCanvas snapshot={snapshot} onDrop={drop} />
       </Paper>
 
+      {snapshot.status === 'playing' && (
+        <Button
+          variant="contained"
+          size="large"
+          onClick={drop}
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            width: '100%',
+            maxWidth: 520,
+            minHeight: 48,
+          }}
+        >
+          Drop
+        </Button>
+      )}
+
       <Stack
         direction="row"
         spacing={1.5}
@@ -112,7 +128,7 @@ export function StackerGame() {
           </Button>
         )}
         {snapshot.status === 'playing' && (
-          <Button variant="contained" onClick={drop}>
+          <Button variant="contained" onClick={drop} sx={{ display: { xs: 'none', md: 'inline-flex' } }}>
             Drop
           </Button>
         )}

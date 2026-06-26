@@ -126,7 +126,7 @@ export function TopAppBar() {
 
   return (
     <>
-      <AppBar position="sticky">
+      <AppBar position="sticky" sx={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <Toolbar sx={{ gap: 2 }}>
           <IconButton
             color="inherit"
