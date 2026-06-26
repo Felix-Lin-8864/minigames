@@ -19,6 +19,12 @@ describe('tadpolesEarnedForGame', () => {
     expect(tadpolesEarnedForGame('stacker', 95)).toBe(23.75)
   })
 
+  it('awards froggle score directly as tadpoles', () => {
+    expect(tadpolesEarnedForGame('froggle', 0)).toBe(0)
+    expect(tadpolesEarnedForGame('froggle', 11)).toBe(11)
+    expect(tadpolesEarnedForGame('froggle', 19)).toBe(19)
+  })
+
   it('awards anagrams score as 2 × ceiling(score / (duration * 10)) tadpoles', () => {
     expect(tadpolesEarnedForGame('anagrams', 0, { duration: 30, mode: 'classic' })).toBe(0)
     expect(tadpolesEarnedForGame('anagrams', 299, { duration: 30, mode: 'classic' })).toBe(2)

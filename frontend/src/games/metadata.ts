@@ -9,6 +9,7 @@ import { SlotsIcon } from '../components/icons/SlotsIcon'
 import { PlinkoIcon } from '../components/icons/PlinkoIcon'
 import { FroggiesIcon } from '../components/icons/FroggiesIcon'
 import { BaccaratIcon } from '../components/icons/BaccaratIcon'
+import { FroggleIcon } from '../components/icons/FroggleIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -57,6 +58,15 @@ export const gameMetadata: GameMetadata[] = [
     description: 'Drop sliding blocks onto the stack — align perfectly or watch your platform shrink.',
     route: '/games/stacker',
     icon: StackerIcon as ElementType,
+    category: 'mini',
+    statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
+  },
+  {
+    id: 'froggle',
+    name: 'Froggle',
+    description: 'Guess the hidden word in a Wordle-style grid — longer words and faster solves earn more tadpoles.',
+    route: '/games/froggle',
+    icon: FroggleIcon as ElementType,
     category: 'mini',
     statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
   },

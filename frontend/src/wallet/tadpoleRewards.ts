@@ -1,6 +1,6 @@
 import type { AnagramsMode } from '../games/anagrams/types'
 
-export const TADPOLE_EARNING_GAMES = ['snake', 'frogger', 'anagrams', 'stacker'] as const
+export const TADPOLE_EARNING_GAMES = ['snake', 'frogger', 'anagrams', 'stacker', 'froggle'] as const
 
 export type TadpoleEarningGameId = (typeof TADPOLE_EARNING_GAMES)[number]
 
@@ -28,6 +28,8 @@ export function tadpolesEarnedForGame(
       return safeScore / 2
     case 'stacker':
       return safeScore / 4
+    case 'froggle':
+      return safeScore
     case 'anagrams': {
       const duration = context?.duration ?? 60
       const units = Math.ceil(safeScore / (duration * 10))

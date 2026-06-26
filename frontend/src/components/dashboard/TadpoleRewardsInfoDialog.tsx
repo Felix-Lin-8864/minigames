@@ -50,6 +50,10 @@ export function TadpoleRewardsInfoDialog({ open, onClose }: TadpoleRewardsInfoDi
             formula="tadpoles = points ÷ 4"
           />
           <FormulaSection
+            title="Froggle"
+            formula="tadpoles = ceil(length² ÷ 4) + ceil((length ÷ 2) × guesses remaining) on win"
+          />
+          <FormulaSection
             title="Anagrams"
             formula="tadpoles = 2 × ceil(points ÷ (duration × 10))"
           />
