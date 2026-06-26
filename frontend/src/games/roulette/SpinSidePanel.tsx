@@ -6,8 +6,9 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
 import { NumericInput } from '../../components/NumericInput'
 import { formatTadpoles } from '../../wallet/tadpoleAmount'
+import { snapRequiredBetAmount } from '../betAmount'
 import { ActiveBetsTable } from './ActiveBetsTable'
-import { MIN_BET, WHEEL_SPIN_MS } from './constants'
+import { BET_STEP, MIN_BET, WHEEL_SPIN_MS } from './constants'
 import { NUMBER_DATA } from './numberData'
 import { pocketColorSx } from './RecentSpins'
 import { RouletteWheel } from './RouletteWheel'
@@ -130,6 +131,12 @@ export function SpinSidePanel({
     if (parsed !== null) onBetAmountChange(parsed)
   }
 
+  function handleBetInputBlur() {
+    const snapped = snapRequiredBetAmount(betInput, MIN_BET, BET_STEP)
+    setBetInput(String(snapped))
+    onBetAmountChange(snapped)
+  }
+
   function handleBoostInputChange(value: string) {
     setBoostInput(value)
     const parsed = parseBoostInput(value)
@@ -173,8 +180,9 @@ export function SpinSidePanel({
               label="Bet"
               value={betInput}
               onChange={handleBetInputChange}
+              onBlur={handleBetInputBlur}
               min={MIN_BET}
-              step={1}
+              step={BET_STEP}
             />
             <NumericInput
               label="Boost"

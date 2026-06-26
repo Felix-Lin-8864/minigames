@@ -7,6 +7,7 @@ import { TwentyOneIcon } from '../components/icons/TwentyOneIcon'
 import { RouletteIcon } from '../components/icons/RouletteIcon'
 import { SlotsIcon } from '../components/icons/SlotsIcon'
 import { PlinkoIcon } from '../components/icons/PlinkoIcon'
+import { FroggiesIcon } from '../components/icons/FroggiesIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -91,6 +92,15 @@ export const gameMetadata: GameMetadata[] = [
     description: 'Drop a ball through the pegs — pick your risk tier and land a multiplier slot.',
     route: '/games/plinko',
     icon: PlinkoIcon as ElementType,
+    category: 'frogtune',
+    statFields: [],
+  },
+  {
+    id: 'froggies',
+    name: 'Froggies',
+    description: 'Five coloured frogs race along the track — bet on the exact finishing order.',
+    route: '/games/froggies',
+    icon: FroggiesIcon as ElementType,
     category: 'frogtune',
     statFields: [],
   },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getOptimalMove } from './basicStrategy'
 import { createCard } from './cards'
-import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, PAIR_BET_STEP, SHOE_SIZE } from './constants'
+import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, BET_STEP, PAIR_BET_STEP, SHOE_SIZE } from './constants'
 import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
 import { createInitialState, twentyOneReducer, toSnapshot } from './gameLogic'
 import { evaluatePairBet } from './pairBet'
@@ -168,6 +168,18 @@ function doubleDown(state: ReturnType<typeof createInitialState>) {
 }
 
 describe('game reducer', () => {
+  it('rejects main bets that are not multiples of the step', () => {
+    const state = createInitialState(createShoe(deterministicRandom([0.5])))
+    const next = twentyOneReducer(state, { type: 'set_bet', bet: MIN_BET + 2 })
+    expect(next.pendingBet).toBe(MIN_BET)
+  })
+
+  it('rejects deals with invalid main bet steps', () => {
+    const state = createInitialState(createShoe(deterministicRandom([0.5])))
+    const next = twentyOneReducer(state, { type: 'deal', bet: MIN_BET + 2, pairBet: 0 })
+    expect(next.phase).toBe('betting')
+  })
+
   it('allows betting phase transitions without dealing', () => {
     const state = createInitialState(createShoe(deterministicRandom([0.5])))
     const next = twentyOneReducer(state, { type: 'set_bet', bet: 15 })

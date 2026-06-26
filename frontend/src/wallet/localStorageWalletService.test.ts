@@ -66,6 +66,8 @@ describe('localStorageWalletService', () => {
     expect(wallet.balance).toBe(42)
     expect(wallet.allTimeHigh).toBe(42)
     expect(wallet.frogtuneNet).toEqual({})
+    expect(wallet.frogtuneWinnings).toEqual({})
+    expect(wallet.frogtuneLosses).toEqual({})
   })
 
   it('tracks frogtune net per game', async () => {
@@ -80,6 +82,28 @@ describe('localStorageWalletService', () => {
       slots: 15,
       'twenty-one': 10,
     })
+    expect(wallet.frogtuneWinnings).toEqual({
+      slots: 25,
+      'twenty-one': 30,
+    })
+    expect(wallet.frogtuneLosses).toEqual({
+      slots: 10,
+      'twenty-one': 20,
+    })
+  })
+
+  it('backfills frogtune winnings and losses from stored net', async () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        balance: 50,
+        frogtuneNet: { slots: 15, roulette: -8 },
+      }),
+    )
+
+    const wallet = await localStorageWalletService.getWallet()
+    expect(wallet.frogtuneWinnings).toEqual({ slots: 15 })
+    expect(wallet.frogtuneLosses).toEqual({ roulette: 8 })
   })
 
   it('does not change frogtune net for mini-game earnings', async () => {
@@ -87,5 +111,7 @@ describe('localStorageWalletService', () => {
 
     const wallet = await localStorageWalletService.getWallet()
     expect(wallet.frogtuneNet).toEqual({})
+    expect(wallet.frogtuneWinnings).toEqual({})
+    expect(wallet.frogtuneLosses).toEqual({})
   })
 })

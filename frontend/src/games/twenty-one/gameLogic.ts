@@ -1,4 +1,5 @@
 import {
+  BET_STEP,
   DOUBLE_AFTER_SPLIT,
   MAX_SPLITS,
   MIN_BET,
@@ -417,11 +418,14 @@ export function startDealerTurn(state: TwentyOneState): TwentyOneState {
 
 export function twentyOneReducer(state: TwentyOneState, action: TwentyOneAction): TwentyOneState {
   switch (action.type) {
-    case 'set_bet':
+    case 'set_bet': {
+      const bet = Math.max(MIN_BET, Math.floor(action.bet))
+      if (bet % BET_STEP !== 0) return state
       return {
         ...state,
-        pendingBet: Math.max(MIN_BET, Math.floor(action.bet)),
+        pendingBet: bet,
       }
+    }
 
     case 'set_pair_bet': {
       const pairBet = Math.max(0, Math.floor(action.pairBet))
@@ -438,6 +442,7 @@ export function twentyOneReducer(state: TwentyOneState, action: TwentyOneAction)
       if (state.phase !== 'betting' && state.phase !== 'resolved') return state
       const bet = Math.max(MIN_BET, Math.floor(action.bet))
       const pairBet = Math.floor(action.pairBet)
+      if (bet % BET_STEP !== 0) return state
       if (
         pairBet > 0 &&
         (pairBet < MIN_PAIR_BET || pairBet % PAIR_BET_STEP !== 0)

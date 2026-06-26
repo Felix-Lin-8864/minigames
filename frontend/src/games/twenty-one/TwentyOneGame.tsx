@@ -12,7 +12,12 @@ import { NumericInput } from '../../components/NumericInput'
 import { FrogDollarIcon } from '../../components/icons/FrogDollarIcon'
 import { useWallet } from '../../wallet/useWallet'
 import { formatTadpoles, formatTadpolesFixed } from '../../wallet/tadpoleAmount'
-import { MIN_BET, MIN_PAIR_BET, PAIR_BET_STEP } from './constants'
+import {
+  formatOptionalBetAmount,
+  snapOptionalBetAmount,
+  snapRequiredBetAmount,
+} from '../betAmount'
+import { MIN_BET, MIN_PAIR_BET, BET_STEP, PAIR_BET_STEP } from './constants'
 import { getHandValue } from './handValue'
 import { HiLoPanel } from './HiLoPanel'
 import { PAIR_RESULT_LABELS } from './pairBet'
@@ -99,7 +104,7 @@ function parseBetInput(input: string): number | null {
   const trimmed = input.trim()
   if (trimmed === '') return null
   const value = Math.floor(Number(trimmed))
-  if (!Number.isFinite(value) || value < MIN_BET) return null
+  if (!Number.isFinite(value) || value < MIN_BET || value % BET_STEP !== 0) return null
   return value
 }
 
@@ -210,12 +215,24 @@ export function TwentyOneGame() {
     }
   }
 
+  function handleBetBlur() {
+    const snapped = snapRequiredBetAmount(betInput, MIN_BET, BET_STEP)
+    setBetInput(String(snapped))
+    setBet(snapped)
+  }
+
   function handlePairBetChange(value: string) {
     setPairBetInput(value)
     const pairBet = parsePairBetInput(value)
     if (pairBet >= 0) {
       setPairBet(pairBet)
     }
+  }
+
+  function handlePairBetBlur() {
+    const snapped = snapOptionalBetAmount(pairBetInput, MIN_PAIR_BET, PAIR_BET_STEP)
+    setPairBetInput(formatOptionalBetAmount(snapped))
+    setPairBet(snapped)
   }
 
   return (
@@ -392,13 +409,15 @@ export function TwentyOneGame() {
                 label="Bet"
                 value={betInput}
                 onChange={handleBetChange}
+                onBlur={handleBetBlur}
                 min={MIN_BET}
-                step={1}
+                step={BET_STEP}
               />
               <NumericInput
                 label="Pair bet"
                 value={pairBetInput}
                 onChange={handlePairBetChange}
+                onBlur={handlePairBetBlur}
                 placeholder="0"
                 min={0}
                 step={PAIR_BET_STEP}

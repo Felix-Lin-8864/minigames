@@ -27,6 +27,7 @@ export interface NumericInputProps {
   label: string
   value: string
   onChange: (value: string) => void
+  onBlur?: () => void
   min?: number
   max?: number
   step?: number
@@ -47,6 +48,7 @@ export function NumericInput({
   label,
   value,
   onChange,
+  onBlur,
   min,
   max,
   step = 1,
@@ -92,6 +94,7 @@ export function NumericInput({
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
           variant="standard"
           slotProps={{
             htmlInput: { min, max, step, 'aria-label': label },

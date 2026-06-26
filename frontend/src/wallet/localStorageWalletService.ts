@@ -1,5 +1,10 @@
 import type { WalletService } from './WalletService'
-import { adjustFrogtuneNet } from './frogtuneNet'
+import {
+  adjustFrogtuneLosses,
+  adjustFrogtuneNet,
+  adjustFrogtuneWinnings,
+  backfillFrogtuneWinningsLosses,
+} from './frogtuneNet'
 import { normalizeTadpoles } from './tadpoleAmount'
 import { createEmptyWallet, type Wallet } from './types'
 
@@ -17,11 +22,30 @@ function normalizeWallet(parsed: Partial<Wallet>): Wallet {
       normalizeTadpoles(net),
     ]),
   )
+  const frogtuneWinnings = Object.fromEntries(
+    Object.entries(parsed.frogtuneWinnings ?? {}).map(([gameId, amount]) => [
+      gameId,
+      normalizeTadpoles(amount),
+    ]),
+  )
+  const frogtuneLosses = Object.fromEntries(
+    Object.entries(parsed.frogtuneLosses ?? {}).map(([gameId, amount]) => [
+      gameId,
+      normalizeTadpoles(amount),
+    ]),
+  )
+  const backfilled = backfillFrogtuneWinningsLosses(
+    frogtuneNet,
+    frogtuneWinnings,
+    frogtuneLosses,
+  )
 
   return {
     balance,
     allTimeHigh,
     frogtuneNet,
+    frogtuneWinnings: backfilled.frogtuneWinnings,
+    frogtuneLosses: backfilled.frogtuneLosses,
     lastUpdatedAt: parsed.lastUpdatedAt ?? null,
   }
 }
@@ -57,6 +81,10 @@ export const localStorageWalletService: WalletService = {
       frogtuneNet: options?.frogtuneGameId
         ? adjustFrogtuneNet(wallet.frogtuneNet, options.frogtuneGameId, earned)
         : wallet.frogtuneNet,
+      frogtuneWinnings: options?.frogtuneGameId
+        ? adjustFrogtuneWinnings(wallet.frogtuneWinnings, options.frogtuneGameId, earned)
+        : wallet.frogtuneWinnings,
+      frogtuneLosses: wallet.frogtuneLosses,
       lastUpdatedAt: new Date().toISOString(),
     }
     writeWallet(next)
@@ -76,6 +104,10 @@ export const localStorageWalletService: WalletService = {
       frogtuneNet: options?.frogtuneGameId
         ? adjustFrogtuneNet(wallet.frogtuneNet, options.frogtuneGameId, -cost)
         : wallet.frogtuneNet,
+      frogtuneWinnings: wallet.frogtuneWinnings,
+      frogtuneLosses: options?.frogtuneGameId
+        ? adjustFrogtuneLosses(wallet.frogtuneLosses, options.frogtuneGameId, cost)
+        : wallet.frogtuneLosses,
       lastUpdatedAt: new Date().toISOString(),
     }
     writeWallet(next)

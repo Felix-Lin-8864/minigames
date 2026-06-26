@@ -16,6 +16,9 @@ export const PAIR_BET_STEP = 5
 /** Minimum main-hand wager in tadpoles. */
 export const MIN_BET = 10
 
+/** Main-hand bet input step in tadpoles. */
+export const BET_STEP = 5
+
 /** Dealer stands on all 17s, including soft 17. */
 export const DEALER_HITS_SOFT_17 = false
 
