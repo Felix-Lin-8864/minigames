@@ -111,6 +111,7 @@ export function BaccaratGame() {
   const showRunningTotals = snapshot.phase === 'dealing' || snapshot.phase === 'resolved'
   const winner = winningSide(snapshot.outcome)
   const staked = snapshot.bet > 0 ? snapshot.bet : snapshot.pendingBet
+  const showWinnerHighlight = dealSequenceComplete && hand !== null
 
   const dealDisabled =
     parsedBet === null ||
@@ -219,7 +220,7 @@ export function BaccaratGame() {
                   label="Banker"
                   cards={hand.bankerCards}
                   finalTotal={hand.bankerTotal}
-                  highlight={snapshot.phase === 'resolved' && winner === 'banker'}
+                  highlight={showWinnerHighlight && winner === 'banker'}
                   isCardVisible={isCardVisible}
                   showTotals={showRunningTotals}
                   animate={snapshot.phase === 'dealing'}
@@ -229,13 +230,13 @@ export function BaccaratGame() {
                   label="Player"
                   cards={hand.playerCards}
                   finalTotal={hand.playerTotal}
-                  highlight={snapshot.phase === 'resolved' && winner === 'player'}
+                  highlight={showWinnerHighlight && winner === 'player'}
                   isCardVisible={isCardVisible}
                   showTotals={showRunningTotals}
                   animate={snapshot.phase === 'dealing'}
                   dealing={snapshot.phase === 'dealing'}
                 />
-                {snapshot.phase === 'resolved' && snapshot.outcome === 'tie' && (
+                {showWinnerHighlight && snapshot.outcome === 'tie' && (
                   <Typography
                     variant="body2"
                     color="secondary.main"
