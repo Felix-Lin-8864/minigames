@@ -6,6 +6,7 @@ import { StackerIcon } from '../components/icons/StackerIcon'
 import { TwentyOneIcon } from '../components/icons/TwentyOneIcon'
 import { RouletteIcon } from '../components/icons/RouletteIcon'
 import { SlotsIcon } from '../components/icons/SlotsIcon'
+import { PlinkoIcon } from '../components/icons/PlinkoIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -81,6 +82,15 @@ export const gameMetadata: GameMetadata[] = [
     description: 'Three-reel slots — match symbols on the payline to multiply your tadpole bet.',
     route: '/games/slots',
     icon: SlotsIcon as ElementType,
+    category: 'frogtune',
+    statFields: [],
+  },
+  {
+    id: 'plinko',
+    name: 'Plinko',
+    description: 'Drop a ball through the pegs — pick your risk tier and land a multiplier slot.',
+    route: '/games/plinko',
+    icon: PlinkoIcon as ElementType,
     category: 'frogtune',
     statFields: [],
   },
