@@ -1,33 +1,18 @@
+import { partitionWordsByLength } from '../../dictionary/wordLists'
 import type { WordDictionary } from '../../dictionary/wordDictionary'
 import type { FroggleWordLists, WordLength } from './types'
 
 const VALID_LENGTHS = new Set<WordLength>([5, 6, 7, 8])
 
 export function partitionWordLists(dictionary: WordDictionary): FroggleWordLists {
-  const words5: string[] = []
-  const words6: string[] = []
-  const words7: string[] = []
-  const words8: string[] = []
+  const byLength = partitionWordsByLength(dictionary, [...VALID_LENGTHS])
 
-  for (const word of dictionary) {
-    const upper = word.toUpperCase()
-    switch (upper.length) {
-      case 5:
-        words5.push(upper)
-        break
-      case 6:
-        words6.push(upper)
-        break
-      case 7:
-        words7.push(upper)
-        break
-      case 8:
-        words8.push(upper)
-        break
-    }
+  return {
+    words5: [...(byLength[5] ?? [])],
+    words6: [...(byLength[6] ?? [])],
+    words7: [...(byLength[7] ?? [])],
+    words8: [...(byLength[8] ?? [])],
   }
-
-  return { words5, words6, words7, words8 }
 }
 
 export function getWordListForLength(

@@ -25,6 +25,11 @@ describe('tadpolesEarnedForGame', () => {
     expect(tadpolesEarnedForGame('froggle', 19)).toBe(19)
   })
 
+  it('awards chain pond score directly as tadpoles', () => {
+    expect(tadpolesEarnedForGame('chain-pond', 5)).toBe(5)
+    expect(tadpolesEarnedForGame('chain-pond', 9)).toBe(9)
+  })
+
   it('awards anagrams score as 2 × ceiling(score / (duration * 10)) tadpoles', () => {
     expect(tadpolesEarnedForGame('anagrams', 0, { duration: 30, mode: 'classic' })).toBe(0)
     expect(tadpolesEarnedForGame('anagrams', 299, { duration: 30, mode: 'classic' })).toBe(2)

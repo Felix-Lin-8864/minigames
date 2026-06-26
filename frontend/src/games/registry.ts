@@ -11,6 +11,7 @@ import { PlinkoPage } from '../pages/games/PlinkoPage'
 import { FroggiesPage } from '../pages/games/FroggiesPage'
 import { BaccaratPage } from '../pages/games/BaccaratPage'
 import { FrogglePage } from '../pages/games/FrogglePage'
+import { ChainPondPage } from '../pages/games/ChainPondPage'
 
 export interface GameDefinition extends GameMetadata {
   component: ComponentType
@@ -28,6 +29,7 @@ const components: Record<string, ComponentType> = {
   froggies: FroggiesPage,
   baccarat: BaccaratPage,
   froggle: FrogglePage,
+  'chain-pond': ChainPondPage,
 }
 
 export const games: GameDefinition[] = gameMetadata

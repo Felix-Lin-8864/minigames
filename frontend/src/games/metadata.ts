@@ -10,6 +10,7 @@ import { PlinkoIcon } from '../components/icons/PlinkoIcon'
 import { FroggiesIcon } from '../components/icons/FroggiesIcon'
 import { BaccaratIcon } from '../components/icons/BaccaratIcon'
 import { FroggleIcon } from '../components/icons/FroggleIcon'
+import { ChainPondIcon } from '../components/icons/ChainPondIcon'
 import type { StatField } from '../stats/types'
 
 export type GameCategory = 'mini' | 'frogtune'
@@ -69,6 +70,15 @@ export const gameMetadata: GameMetadata[] = [
     icon: FroggleIcon as ElementType,
     category: 'mini',
     statFields: [{ key: 'highScore', label: 'High Score', format: 'score' }],
+  },
+  {
+    id: 'chain-pond',
+    name: 'Chain Pond',
+    description: 'Link words by last letter and required length — keep the chain alive before the timer runs out.',
+    route: '/games/chain-pond',
+    icon: ChainPondIcon as ElementType,
+    category: 'mini',
+    statFields: [{ key: 'highScore', label: 'Longest Chain', format: 'score' }],
   },
   {
     id: 'twenty-one',
