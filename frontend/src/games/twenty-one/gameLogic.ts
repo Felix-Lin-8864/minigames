@@ -381,12 +381,23 @@ export function startDealerTurn(state: TwentyOneState): TwentyOneState {
     }
 
     const playerTotal = getHandValue(hand.cards).total
+    const playerBJ = isBlackjack(hand.cards)
+    const dealerBJ = isBlackjack(dealerHand)
     let outcome = hand.outcome
     let payout = hand.payout
 
     if (dealerBusted) {
       outcome = 'win'
       payout = winPayout(hand.bet)
+    } else if (playerBJ && dealerBJ) {
+      outcome = 'push'
+      payout = pushPayout(hand.bet)
+    } else if (dealerBJ) {
+      outcome = 'lose'
+      payout = 0
+    } else if (playerBJ) {
+      outcome = 'blackjack'
+      payout = blackjackPayout(hand.bet)
     } else if (playerTotal > dealerTotal) {
       outcome = 'win'
       payout = winPayout(hand.bet)

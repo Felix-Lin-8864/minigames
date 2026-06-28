@@ -3,7 +3,7 @@ import { getOptimalMove } from './basicStrategy'
 import { createCard } from './cards'
 import { CARD_VALUE_KEYS, HANDS_PER_SHOE, MIN_BET, MIN_PAIR_BET, BET_STEP, PAIR_BET_STEP, SHOE_SIZE } from './constants'
 import { formatTadpolesFixed } from '../../wallet/tadpoleAmount'
-import { createInitialState, twentyOneReducer, toSnapshot } from './gameLogic'
+import { createInitialState, startDealerTurn, twentyOneReducer, toSnapshot } from './gameLogic'
 import { evaluatePairBet } from './pairBet'
 import { fisherYatesShuffle } from './shuffle'
 import * as shoeModule from './shoe'
@@ -18,6 +18,8 @@ import {
   runningCountFromDiscard,
   totalRemaining,
 } from './shoe'
+import type { TwentyOneState } from './types'
+import { blackjackPayout } from './hand'
 
 function deterministicRandom(values: number[]): () => number {
   let index = 0
@@ -26,6 +28,12 @@ function deterministicRandom(values: number[]): () => number {
     index += 1
     return value
   }
+}
+
+function riggedShoe(cards: ReturnType<typeof createCard>[]) {
+  const shoe = createShoe(() => 0.5)
+  shoe.queue = [...cards, ...shoe.queue]
+  return shoe
 }
 
 describe('shoe management', () => {
@@ -348,5 +356,140 @@ describe('game reducer', () => {
     }
 
     throw new Error('could not find an immediate blackjack seed')
+  })
+})
+
+describe('dealer blackjack', () => {
+  it('loses the main bet when only the dealer has blackjack', () => {
+    const shoe = riggedShoe([
+      createCard('hearts', '8'),
+      createCard('clubs', '7'),
+      createCard('spades', 'A'),
+      createCard('diamonds', 'K', false),
+    ])
+
+    let state = createInitialState(shoe)
+    state = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: 0 })
+
+    expect(state.phase).toBe('resolved')
+    expect(state.playerHands[0]?.outcome).toBe('lose')
+    expect(state.playerHands[0]?.payout).toBe(0)
+    expect(state.lastHandNet).toBe(-MIN_BET)
+    expect(state.message).toContain('Dealer has blackjack')
+  })
+
+  it('pushes when both player and dealer have blackjack', () => {
+    const shoe = riggedShoe([
+      createCard('hearts', 'A'),
+      createCard('clubs', 'K'),
+      createCard('spades', 'A'),
+      createCard('diamonds', 'K', false),
+    ])
+
+    let state = createInitialState(shoe)
+    state = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: 0 })
+
+    expect(state.phase).toBe('resolved')
+    expect(state.playerHands[0]?.outcome).toBe('push')
+    expect(state.playerHands[0]?.payout).toBe(MIN_BET)
+    expect(state.lastHandNet).toBe(0)
+  })
+
+  it('loses main bet after pair reveal when only the dealer has blackjack', () => {
+    const shoe = riggedShoe([
+      createCard('hearts', '8'),
+      createCard('clubs', '7'),
+      createCard('spades', 'A'),
+      createCard('diamonds', 'K', false),
+    ])
+
+    let state = createInitialState(shoe)
+    state = twentyOneReducer(state, { type: 'deal', bet: MIN_BET, pairBet: MIN_PAIR_BET })
+    expect(state.phase).toBe('pair_reveal')
+
+    state = twentyOneReducer(state, { type: 'continue_after_pair' })
+    expect(state.phase).toBe('resolved')
+    expect(state.playerHands[0]?.outcome).toBe('lose')
+    expect(state.playerHands[0]?.payout).toBe(0)
+    expect(state.lastHandNet).toBe(-MIN_BET)
+  })
+
+  it('does not push when player has 21 after hits and dealer has natural blackjack', () => {
+    const shoe = riggedShoe([
+      createCard('hearts', '5'),
+      createCard('clubs', '6'),
+      createCard('hearts', '10'),
+    ])
+
+    const playerCards = [
+      createCard('hearts', '5'),
+      createCard('clubs', '6'),
+      createCard('hearts', '10'),
+    ]
+    const dealerCards = [createCard('spades', 'A'), createCard('diamonds', 'K', false)]
+
+    const state: TwentyOneState = {
+      ...createInitialState(shoe),
+      phase: 'dealer',
+      playerHands: [
+        {
+          cards: playerCards,
+          bet: MIN_BET,
+          status: 'stood',
+          isSplitAces: false,
+          isFromSplit: false,
+          outcome: 'pending',
+          payout: 0,
+        },
+      ],
+      dealerHand: dealerCards,
+      dealerHoleRevealed: false,
+    }
+
+    const resolved = startDealerTurn(state)
+
+    expect(resolved.playerHands[0]?.outcome).toBe('lose')
+    expect(resolved.playerHands[0]?.payout).toBe(0)
+    expect(resolved.lastHandNet).toBe(-MIN_BET)
+  })
+
+  it('pays 3:2 when player has natural blackjack and dealer reaches 21 on three cards', () => {
+    const shoe = riggedShoe([
+      createCard('clubs', '7'),
+      createCard('diamonds', '7'),
+      createCard('spades', '7'),
+    ])
+
+    const playerCards = [createCard('hearts', 'A'), createCard('hearts', 'K')]
+    const dealerCards = [
+      createCard('clubs', '7'),
+      createCard('diamonds', '7'),
+      createCard('spades', '7'),
+    ]
+
+    const state: TwentyOneState = {
+      ...createInitialState(shoe),
+      phase: 'dealer',
+      playerHands: [
+        {
+          cards: playerCards,
+          bet: MIN_BET,
+          status: 'stood',
+          isSplitAces: false,
+          isFromSplit: false,
+          outcome: 'pending',
+          payout: 0,
+        },
+      ],
+      dealerHand: dealerCards,
+      dealerHoleRevealed: true,
+    }
+
+    const resolved = startDealerTurn(state)
+    const expectedNet = blackjackPayout(MIN_BET) - MIN_BET
+
+    expect(resolved.playerHands[0]?.outcome).toBe('blackjack')
+    expect(resolved.playerHands[0]?.payout).toBe(blackjackPayout(MIN_BET))
+    expect(resolved.lastHandNet).toBe(expectedNet)
   })
 })
