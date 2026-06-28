@@ -20,12 +20,19 @@ describe('evaluatePairBet', () => {
     expect(evaluatePairBet(createCard('hearts', '8'), createCard('diamonds', '8'))).not.toBe('perfect')
   })
 
-  it('returns colored when rank matches, suits differ, same color (non-Ace)', () => {
-    expect(evaluatePairBet(createCard('hearts', '8'), createCard('diamonds', '8'))).toBe('colored')
-    expect(evaluatePairBet(createCard('clubs', 'Q'), createCard('spades', 'Q'))).toBe('colored')
+  it('returns royal for J/Q/K pairs that are not perfect', () => {
+    expect(evaluatePairBet(createCard('hearts', 'K'), createCard('diamonds', 'K'))).toBe('royal')
+    expect(evaluatePairBet(createCard('hearts', 'K'), createCard('clubs', 'K'))).toBe('royal')
+    expect(evaluatePairBet(createCard('spades', 'Q'), createCard('clubs', 'Q'))).toBe('royal')
+    expect(evaluatePairBet(createCard('diamonds', 'J'), createCard('hearts', 'J'))).toBe('royal')
   })
 
-  it('returns mixed when rank matches but colors differ (non-Ace)', () => {
+  it('returns colored when rank matches, suits differ, same color (non-Ace, non-royal)', () => {
+    expect(evaluatePairBet(createCard('hearts', '8'), createCard('diamonds', '8'))).toBe('colored')
+    expect(evaluatePairBet(createCard('clubs', '10'), createCard('spades', '10'))).toBe('colored')
+  })
+
+  it('returns mixed when rank matches but colors differ (non-Ace, non-royal)', () => {
     expect(evaluatePairBet(createCard('hearts', '8'), createCard('clubs', '8'))).toBe('mixed')
     expect(evaluatePairBet(createCard('diamonds', '5'), createCard('spades', '5'))).toBe('mixed')
   })
@@ -42,6 +49,7 @@ describe('getPairPayout', () => {
   it('returns exact multiples for each tier', () => {
     expect(getPairPayout('ace', bet)).toBe(bet * 30)
     expect(getPairPayout('perfect', bet)).toBe(bet * 20)
+    expect(getPairPayout('royal', bet)).toBe(bet * 15)
     expect(getPairPayout('colored', bet)).toBe(bet * 10)
     expect(getPairPayout('mixed', bet)).toBe(bet * 5)
     expect(getPairPayout('none', bet)).toBe(0)
@@ -52,7 +60,7 @@ describe('getPairBetProbabilities', () => {
   it('sums to 1 on a fresh 6-deck shoe', () => {
     const remaining = createInitialRemainingBySuitRank()
     const probs = getPairBetProbabilities(remaining)
-    const sum = probs.ace + probs.perfect + probs.colored + probs.mixed + probs.none
+    const sum = probs.ace + probs.perfect + probs.royal + probs.colored + probs.mixed + probs.none
     expect(sum).toBeCloseTo(1, 8)
   })
 

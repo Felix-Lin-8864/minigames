@@ -32,7 +32,9 @@ function baseSnapshot(overrides: Partial<TwentyOneSnapshot> = {}): TwentyOneSnap
       remainingByValue: {} as TwentyOneSnapshot['shoe']['remainingByValue'],
       probabilities: {},
       pairBetProbabilities: {
+        ace: 0,
         perfect: 0,
+        royal: 0,
         colored: 0,
         mixed: 0,
         none: 1,

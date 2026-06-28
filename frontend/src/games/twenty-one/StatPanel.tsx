@@ -15,7 +15,7 @@ interface StatPanelProps {
   canSplit: boolean
 }
 
-const PAIR_TIER_KEYS: PairResult[] = ['ace', 'perfect', 'colored', 'mixed', 'none']
+const PAIR_TIER_KEYS: PairResult[] = ['ace', 'perfect', 'royal', 'colored', 'mixed', 'none']
 
 export function StatPanel({ snapshot, canDouble, canSplit }: StatPanelProps) {
   const activeHand = snapshot.playerHands[snapshot.activeHandIndex]

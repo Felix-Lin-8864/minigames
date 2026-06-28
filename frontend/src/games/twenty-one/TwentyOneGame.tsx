@@ -20,7 +20,7 @@ import {
 import { MIN_BET, MIN_PAIR_BET, BET_STEP, PAIR_BET_STEP } from './constants'
 import { getHandValue } from './handValue'
 import { HiLoPanel } from './HiLoPanel'
-import { PAIR_RESULT_LABELS } from './pairBet'
+import { PAIR_RESULT_OVERLAY_NAMES } from './pairBet'
 import { readPanelPreferences, writePanelPreferences } from './panelPreferences'
 import { CardPlaceholder } from './PlayingCard'
 import { visibleDealerHandForTotal } from './cardDealAnimation'
@@ -88,16 +88,15 @@ function resultHeadline(snapshot: TwentyOneSnapshot): string {
   return 'Push'
 }
 
-function pairBetNotificationMessage(snapshot: TwentyOneSnapshot): string {
-  if (!snapshot.pairBetResult) return ''
-  const tier = PAIR_RESULT_LABELS[snapshot.pairBetResult]
-  if (snapshot.pairBetPayout > 0) {
-    return `Pair bet: ${tier} — +${formatTadpoles(snapshot.pairBetPayout)} tadpoles`
+function pairBetResultOverlayLine(snapshot: TwentyOneSnapshot): string | null {
+  if (
+    snapshot.pairBetPayout <= 0 ||
+    snapshot.pairBetResult == null ||
+    snapshot.pairBetResult === 'none'
+  ) {
+    return null
   }
-  if (snapshot.pairBetResult === 'none') {
-    return `Pair bet: ${tier} — side wager lost`
-  }
-  return `Pair bet: ${tier}`
+  return `+${formatTadpolesFixed(snapshot.pairBetPayout)} ${PAIR_RESULT_OVERLAY_NAMES[snapshot.pairBetResult]} pair`
 }
 
 function parseBetInput(input: string): number | null {
@@ -235,6 +234,8 @@ export function TwentyOneGame() {
     setPairBet(snapped)
   }
 
+  const pairResultOverlayLine = pairBetResultOverlayLine(snapshot)
+
   return (
     <Box sx={{ width: '100%' }}>
       <Stack
@@ -317,6 +318,11 @@ export function TwentyOneGame() {
                   {snapshot.message && (
                     <Typography variant="body1" color="text.secondary">
                       {snapshot.message}
+                    </Typography>
+                  )}
+                  {pairResultOverlayLine && (
+                    <Typography variant="body1" color="text.secondary">
+                      {pairResultOverlayLine}
                     </Typography>
                   )}
                 </Stack>
@@ -476,20 +482,6 @@ export function TwentyOneGame() {
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2 }}>
         Dealer stands on 17 · blackjack pays 3:2 · up to 2 splits · no double after split
       </Typography>
-
-      <Snackbar
-        open={snapshot.phase === 'pair_reveal' && snapshot.pairBetResult != null}
-        autoHideDuration={PAIR_REVEAL_DELAY_MS}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          severity={snapshot.pairBetPayout > 0 ? 'success' : 'info'}
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {pairBetNotificationMessage(snapshot)}
-        </Alert>
-      </Snackbar>
 
       <Snackbar
         open={reshuffleNoticeOpen}
